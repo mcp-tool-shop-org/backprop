@@ -26,7 +26,7 @@ export class PythonRunner {
       return {
         success: false,
         exitCode: null,
-        error: \Governor rejected run: \\,
+        error: `Governor rejected run: ${permission.reason}`,
         durationMs: 0,
         reason: 'governor_rejected'
       };
@@ -66,7 +66,7 @@ export class PythonRunner {
             const parsed = JSON.parse(line);
             this.handleProgress(parsed);
           } catch (e) {
-            console.log(\[Python] \\);
+            console.log(`[Python] ${line}`);
           }
         });
       }
@@ -74,7 +74,7 @@ export class PythonRunner {
       if (this.process.stderr) {
         this.process.stderr.on('data', (data) => {
           errorOutput += data.toString();
-          console.error(\[Python Error] \\);
+          console.error(`[Python Error] ${data.toString().trim()}`);
         });
       }
 
@@ -84,13 +84,13 @@ export class PythonRunner {
       
       const timeoutId = setTimeout(() => {
         if (this.process && this.process.exitCode === null) {
-          console.warn(\[Runner] Max run time of \ minutes reached. Sending SIGINT for graceful shutdown.\);
+          console.warn(`[Runner] Max run time of ${this.config.maxRunMinutes} minutes reached. Sending SIGINT for graceful shutdown.`);
           this.process.kill('SIGINT');
           
           // Force kill after 30 seconds if it doesn't shut down gracefully
           forceKillTimeoutId = setTimeout(() => {
             if (this.process && this.process.exitCode === null) {
-              console.warn(\[Runner] Process did not shut down gracefully. Sending SIGKILL.\);
+              console.warn(`[Runner] Process did not shut down gracefully. Sending SIGKILL.`);
               this.process.kill('SIGKILL');
             }
           }, 30000);
@@ -138,11 +138,11 @@ export class PythonRunner {
 
   private handleProgress(data: any) {
     if (data.step !== undefined && data.loss !== undefined) {
-      console.log(\[Progress] Step: \, Loss: \\);
+      console.log(`[Progress] Step: ${data.step}, Loss: ${data.loss}`);
     } else if (data.event === 'checkpoint_saved') {
-      console.log(\[Checkpoint] Saved at \\);
+      console.log(`[Checkpoint] Saved at ${data.path}`);
     } else {
-      console.log(\[Progress] \\);
+      console.log(`[Progress] ${JSON.stringify(data)}`);
     }
   }
 
