@@ -5,8 +5,8 @@ export const ConfigSchema = z.object({
   runId: z.string().default(() => `run-${Date.now()}`),
   framework: z.enum(['pytorch', 'tensorflow', 'auto']).default('auto'),
   maxRunMinutes: z.number().positive().default(10),
-  gpuMemoryLimitGb: z.number().positive().optional(),
-  maxParallel: z.number().int().positive().default(1),
+  gpuMemoryLimit: z.union([z.number().positive(), z.string()]).optional(),
+  maxParallel: z.number().int().positive().default(2),
   checkpointEveryMinutes: z.number().positive().optional(),
   resumeFrom: z.string().optional(),
 });

@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import { ConfigSchema } from './config/schema.js';
+import { loadConfig } from './config/index.js';
 import { PythonRunner } from './runner/python-runner.js';
 import { ResourceMonitor } from './governor/resource-monitor.js';
 import { TokenBucket } from './governor/token-bucket.js';
@@ -11,32 +11,49 @@ export const program = new Command();
 program
   .name('backprop')
   .description('CLI-first ML trainer with intelligent resource governance')
-  .version('0.1.0');
+  .version('0.1.0')
+  .option('--config <path>', 'Path to config file')
+  .option('--verbose', 'Enable verbose logging')
+  .option('--dry-run', 'Simulate run without executing');
 
 program
   .command('run')
   .description('Run a training script')
   .argument('<script>', 'Path to the Python training script')
-  .option('-f, --framework <type>', 'Framework to use (pytorch | tensorflow | auto)', 'auto')
-  .option('-m, --max-run-minutes <minutes>', 'Maximum run time in minutes', '10')
-  .option('-g, --gpu-memory-limit-gb <gb>', 'GPU memory limit in GB')
-  .option('-p, --max-parallel <count>', 'Maximum parallel runs', '1')
+  .option('-f, --framework <type>', 'Framework to use (pytorch | tensorflow | auto)')
+  .option('-m, --max-run-minutes <minutes>', 'Maximum run time in minutes')
+  .option('-g, --gpu-memory-limit <limit>', 'GPU memory limit (e.g., "80%" or "8" for GB)')
+  .option('-p, --max-parallel <count>', 'Maximum parallel runs')
   .option('-c, --checkpoint-every-minutes <minutes>', 'Checkpoint interval in minutes')
   .option('-r, --resume-from <path>', 'Path to checkpoint to resume from')
   .option('--run-id <id>', 'Unique identifier for this run')
   .option('-n, --name <name>', 'Human-readable name for this experiment')
   .action(async (script, options) => {
     try {
-      const config = ConfigSchema.parse({
+      const globalOpts = program.opts();
+      
+      const cliOptions: any = {
         trainingScriptPath: script,
-        framework: options.framework,
-        maxRunMinutes: parseFloat(options.maxRunMinutes),
-        gpuMemoryLimitGb: options.gpuMemoryLimitGb ? parseFloat(options.gpuMemoryLimitGb) : undefined,
-        maxParallel: parseInt(options.maxParallel, 10),
-        checkpointEveryMinutes: options.checkpointEveryMinutes ? parseFloat(options.checkpointEveryMinutes) : undefined,
-        resumeFrom: options.resumeFrom,
-        runId: options.runId,
-      });
+      };
+      
+      if (options.framework) cliOptions.framework = options.framework;
+      if (options.maxRunMinutes) cliOptions.maxRunMinutes = parseFloat(options.maxRunMinutes);
+      if (options.gpuMemoryLimit) cliOptions.gpuMemoryLimit = options.gpuMemoryLimit;
+      if (options.maxParallel) cliOptions.maxParallel = parseInt(options.maxParallel, 10);
+      if (options.checkpointEveryMinutes) cliOptions.checkpointEveryMinutes = parseFloat(options.checkpointEveryMinutes);
+      if (options.resumeFrom) cliOptions.resumeFrom = options.resumeFrom;
+      if (options.runId) cliOptions.runId = options.runId;
+
+      const config = await loadConfig(cliOptions, globalOpts.config);
+
+      if (globalOpts.verbose) {
+        console.log('Loaded config:', JSON.stringify(config, null, 2));
+      }
+
+      if (globalOpts.dryRun) {
+        console.log(`[Dry Run] Would start training run for ${config.trainingScriptPath}...`);
+        return;
+      }
 
       console.log(`Starting training run for ${config.trainingScriptPath}...`);
       const tokenBucket = new TokenBucket();
@@ -83,7 +100,7 @@ program
   .command('resume')
   .description('Resume a previous training run')
   .argument('<run-id>', 'ID of the run to resume')
-  .option('-m, --max-run-minutes <minutes>', 'Maximum run time in minutes', '10')
+  .option('-m, --max-run-minutes <minutes>', 'Maximum run time in minutes')
   .action(async (runId, options) => {
     const store = new ExperimentStore();
     await store.init();
@@ -97,10 +114,23 @@ program
     console.log(`Resuming run ${runId} (${run.name || 'unnamed'})...`);
     
     try {
-      const config = ConfigSchema.parse({
+      const globalOpts = program.opts();
+      const cliOptions: any = {
         trainingScriptPath: run.scriptPath,
-        maxRunMinutes: parseFloat(options.maxRunMinutes),
         runId: runId,
+      };
+      if (options.maxRunMinutes) cliOptions.maxRunMinutes = parseFloat(options.maxRunMinutes);
+
+      const config = await loadConfig(cliOptions, globalOpts.config);
+
+      if (globalOpts.verbose) {
+        console.log('Loaded config:', JSON.stringify(config, null, 2));
+      }
+
+      if (globalOpts.dryRun) {
+        console.log(`[Dry Run] Would resume training run ${runId}...`);
+        return;
+      }
       });
 
       const tokenBucket = new TokenBucket();
