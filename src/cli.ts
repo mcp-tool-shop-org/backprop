@@ -14,7 +14,14 @@ program
   .version('0.1.0')
   .option('--config <path>', 'Path to config file')
   .option('--verbose', 'Enable verbose logging')
-  .option('--dry-run', 'Simulate run without executing');
+  .option('--dry-run', 'Simulate run without executing')
+  .addHelpText('after', `
+Examples:
+  $ backprop run train.py -m 30 -g 80%
+  $ backprop resume run-12345
+  $ backprop list
+  $ backprop status
+`);
 
 program
   .command('run')
@@ -28,6 +35,11 @@ program
   .option('-r, --resume-from <path>', 'Path to checkpoint to resume from')
   .option('--run-id <id>', 'Unique identifier for this run')
   .option('-n, --name <name>', 'Human-readable name for this experiment')
+  .addHelpText('after', `
+Description:
+  Executes a Python training script with intelligent resource governance.
+  Automatically timeboxes the run and monitors CPU/RAM/GPU usage.
+`)
   .action(async (script, options) => {
     try {
       const globalOpts = program.opts();
