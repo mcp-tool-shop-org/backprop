@@ -3,33 +3,27 @@ export class TokenBucket {
   private lastRefill: number;
 
   constructor(
-    private capacity: number,
-    private refillRatePerSecond: number
+    private capacity: number = 4,
+    private refillRate: number = 1,        // tokens per minute
+    private refillIntervalMs: number = 60000
   ) {
     this.tokens = capacity;
     this.lastRefill = Date.now();
   }
 
-  private refill() {
-    const now = Date.now();
-    const elapsedSeconds = (now - this.lastRefill) / 1000;
-    const newTokens = elapsedSeconds * this.refillRatePerSecond;
-    
-    this.tokens = Math.min(this.capacity, this.tokens + newTokens);
-    this.lastRefill = now;
-  }
-
-  public consume(amount: number = 1): boolean {
+  async acquire(cost: number = 1): Promise<boolean> {
     this.refill();
-    if (this.tokens >= amount) {
-      this.tokens -= amount;
+    if (this.tokens >= cost) {
+      this.tokens -= cost;
       return true;
     }
     return false;
   }
 
-  public getTokens(): number {
-    this.refill();
-    return this.tokens;
+  private refill() {
+    const now = Date.now();
+    const elapsed = (now - this.lastRefill) / this.refillIntervalMs;
+    this.tokens = Math.min(this.capacity, this.tokens + Math.floor(elapsed * this.refillRate));
+    this.lastRefill = now;
   }
 }
