@@ -1,49 +1,24 @@
 import * as os from 'os';
 
-export interface ResourceUsage {
-  cpuPercent: number;
-  ramUsedGb: number;
-  ramTotalGb: number;
-  gpuMemoryUsedGb?: number;
-  gpuMemoryTotalGb?: number;
-}
-
 export class ResourceMonitor {
-  private lastCpuUsage: NodeJS.CpuUsage;
-  private lastTime: number;
-
-  constructor() {
-    this.lastCpuUsage = process.cpuUsage();
-    this.lastTime = Date.now();
-  }
-
-  public async getUsage(): Promise<ResourceUsage> {
-    const now = Date.now();
-    const currentCpuUsage = process.cpuUsage();
-    
-    const userDiff = currentCpuUsage.user - this.lastCpuUsage.user;
-    const systemDiff = currentCpuUsage.system - this.lastCpuUsage.system;
-    const timeDiff = now - this.lastTime;
-    
-    // CPU usage percentage (approximate)
-    const cpuPercent = timeDiff > 0 
-      ? ((userDiff + systemDiff) / 1000 / timeDiff) * 100 
-      : 0;
-
-    this.lastCpuUsage = currentCpuUsage;
-    this.lastTime = now;
-
-    const totalMem = os.totalmem();
-    const freeMem = os.freemem();
-    const usedMem = totalMem - freeMem;
+  async getState() {
+    const ram = process.memoryUsage();
+    const cpu = os.loadavg()[0]; // 1-min load average
 
     return {
-      cpuPercent: Math.min(100, Math.max(0, cpuPercent)),
-      ramUsedGb: usedMem / (1024 ** 3),
-      ramTotalGb: totalMem / (1024 ** 3),
-      // GPU probe stub for now
-      gpuMemoryUsedGb: 0,
-      gpuMemoryTotalGb: 0,
+      ramFreeGB: (os.freemem() / 1024 ** 3).toFixed(2),
+      cpuLoad: cpu.toFixed(2),
+      gpuVRAMFreeMB: await this.probeGpuVRAM(), // best-effort
+      tempC: await this.probeTemp(),            // best-effort
     };
+  }
+
+  private async probeGpuVRAM(): Promise<number | null> {
+    // TODO: nvidia-smi / rocm-smi fallback
+    return null; // safe default for MVP
+  }
+
+  private async probeTemp(): Promise<number | null> {
+    return null;
   }
 }
