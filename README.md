@@ -67,6 +67,9 @@ Options:
 - `-n, --name <name>`: Human-readable name for this experiment
 - `-g, --gpu-memory-limit <limit>`: GPU memory limit (e.g., "80%" or "8" for GB)
 - `-p, --max-parallel <count>`: Maximum parallel runs
+- `--gpu-probe <type>`: GPU probe type (auto | nvidia-smi | none)
+- `--gpu-min-vram <mb>`: Minimum free VRAM in MB to start run (default: 2500)
+- `--gpu-max-temp <c>`: Maximum GPU temperature in Celsius (default: 85)
 
 ### Configuration File
 
@@ -76,7 +79,12 @@ You can create a `backprop.config.json` in your project root:
 {
   "maxRunMinutes": 30,
   "maxParallel": 2,
-  "gpuMemoryLimit": "80%"
+  "gpuMemoryLimit": "80%",
+  "gpu": {
+    "probe": "auto",
+    "minFreeVramMB": 2500,
+    "maxTempC": 85
+  }
 }
 ```
 

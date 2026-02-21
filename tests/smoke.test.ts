@@ -22,7 +22,7 @@ describe('Smoke Test', () => {
     
     const bucket = new TokenBucket(4, 1, 60000);
     const monitor = new ResourceMonitor();
-    const governor = new Governor(bucket, monitor, 2, 0); // 0 RAM limit to ensure it runs
+    const governor = new Governor(bucket, monitor, 2, 0, 85, 0); // 0 RAM limit, 0 VRAM limit to ensure it runs
     const store = new ExperimentStore();
     await store.init();
     
@@ -57,7 +57,7 @@ describe('Smoke Test', () => {
     
     const bucket = new TokenBucket(4, 1, 60000);
     const monitor = new ResourceMonitor();
-    const governor = new Governor(bucket, monitor, 2, 0);
+    const governor = new Governor(bucket, monitor, 2, 0, 85, 0);
     
     const runner = new PythonRunner(config, governor, store);
     const result = await runner.run();

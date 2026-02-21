@@ -8,8 +8,10 @@ import { ExperimentStore } from '../src/experiments/store.js';
 import * as child_process from 'child_process';
 import { EventEmitter } from 'events';
 import { PassThrough } from 'stream';
+import * as probes from '../src/governor/probes/index.js';
 
 vi.mock('child_process');
+vi.mock('../src/governor/probes/index.js');
 
 describe('PythonRunner', () => {
   let governor: Governor;
@@ -23,10 +25,12 @@ describe('PythonRunner', () => {
     vi.spyOn(monitor, 'getState').mockResolvedValue({
       ramFreeGB: 8.00,
       cpuLoad: 1.00,
-      gpuCount: 1,
-      gpuVRAMFreeMB: 8000,
-      tempC: 60,
       monitoringFailed: false
+    });
+    vi.mocked(probes.getGpuProbe).mockResolvedValue({
+      vramFreeMB: 8000,
+      temperatureC: 60,
+      utilizationPercent: 50
     });
     governor = new Governor(bucket, monitor, 2, 4);
     
