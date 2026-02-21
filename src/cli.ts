@@ -131,7 +131,6 @@ program
         console.log(`[Dry Run] Would resume training run ${runId}...`);
         return;
       }
-      });
 
       const tokenBucket = new TokenBucket();
       const monitor = new ResourceMonitor();
@@ -205,10 +204,14 @@ program
     const monitor = new ResourceMonitor();
     const usage = await monitor.getState();
     console.log('Resource Status:');
-    console.log(`CPU Load: ${usage.cpuLoad}`);
-    console.log(`RAM Free: ${usage.ramFreeGB}GB`);
+    console.log(`CPU Load: ${usage.cpuLoad.toFixed(2)}`);
+    console.log(`RAM Free: ${usage.ramFreeGB.toFixed(2)}GB`);
+    console.log(`GPUs Detected: ${usage.gpuCount}`);
     console.log(`GPU VRAM Free: ${usage.gpuVRAMFreeMB ?? 'Unknown'}MB`);
     console.log(`Temp: ${usage.tempC ?? 'Unknown'}C`);
+    if (usage.monitoringFailed) {
+      console.log('Warning: Advanced resource monitoring failed. Running in conservative mode.');
+    }
   });
 
 import { fileURLToPath } from 'url';

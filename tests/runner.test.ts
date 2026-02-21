@@ -21,10 +21,12 @@ describe('PythonRunner', () => {
     const bucket = new TokenBucket(4, 1, 60000);
     const monitor = new ResourceMonitor();
     vi.spyOn(monitor, 'getState').mockResolvedValue({
-      ramFreeGB: '8.00',
-      cpuLoad: '1.00',
+      ramFreeGB: 8.00,
+      cpuLoad: 1.00,
+      gpuCount: 1,
       gpuVRAMFreeMB: 8000,
-      tempC: 60
+      tempC: 60,
+      monitoringFailed: false
     });
     governor = new Governor(bucket, monitor, 2, 4);
     
