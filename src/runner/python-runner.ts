@@ -4,6 +4,7 @@ import { Config } from '../config/schema.js';
 import { Governor } from '../governor/policy.js';
 import { ExperimentStore, RunRecord } from '../experiments/store.js';
 import * as readline from 'readline';
+import ora, { Ora } from 'ora';
 
 export interface RunResult {
   success: boolean;
@@ -18,6 +19,7 @@ export class PythonRunner {
   private startTime: number = 0;
   private abortController: AbortController;
   private runRecord!: RunRecord;
+  private spinner: Ora;
 
   constructor(
     private config: Config, 
@@ -25,6 +27,7 @@ export class PythonRunner {
     private store: ExperimentStore
   ) {
     this.abortController = new AbortController();
+    this.spinner = ora({ text: 'Initializing run...', stream: process.stdout });
   }
 
   public async run(): Promise<RunResult> {
@@ -57,9 +60,11 @@ export class PythonRunner {
       const latestCheckpoint = await this.store.getLatestCheckpoint(this.config.runId);
       if (latestCheckpoint) {
         this.config.resumeFrom = latestCheckpoint;
-        console.log(`[Runner] Auto-resuming from checkpoint: ${latestCheckpoint}`);
+        this.spinner.info(`Auto-resuming from checkpoint: ${latestCheckpoint}`);
       }
     }
+    
+    this.spinner.start(`Starting Python process...`);
     
     return new Promise((resolve) => {
       const args = [this.config.trainingScriptPath];
@@ -93,7 +98,7 @@ export class PythonRunner {
             const parsed = JSON.parse(line);
             this.handleProgress(parsed);
           } catch (e) {
-            console.log(`[Python] ${line}`);
+            this.spinner.info(`[Python] ${line}`);
           }
         });
       }
@@ -101,7 +106,7 @@ export class PythonRunner {
       if (this.process.stderr) {
         this.process.stderr.on('data', (data) => {
           errorOutput += data.toString();
-          console.error(`[Python Error] ${data.toString().trim()}`);
+          this.spinner.warn(`[Python Error] ${data.toString().trim()}`);
         });
       }
 
@@ -111,13 +116,13 @@ export class PythonRunner {
       
       const timeoutId = setTimeout(() => {
         if (this.process && this.process.exitCode === null) {
-          console.warn(`[Runner] Max run time of ${this.config.maxRunMinutes} minutes reached. Sending SIGINT for graceful shutdown.`);
+          this.spinner.warn(`Max run time of ${this.config.maxRunMinutes} minutes reached. Sending SIGINT for graceful shutdown.`);
           this.process.kill('SIGINT');
           
           // Force kill after 30 seconds if it doesn't shut down gracefully
           forceKillTimeoutId = setTimeout(() => {
             if (this.process && this.process.exitCode === null) {
-              console.warn(`[Runner] Process did not shut down gracefully. Sending SIGKILL.`);
+              this.spinner.fail(`Process did not shut down gracefully. Sending SIGKILL.`);
               this.process.kill('SIGKILL');
             }
           }, 30000);
@@ -141,6 +146,14 @@ export class PythonRunner {
         this.runRecord.endTime = Date.now();
         await this.store.saveRun(this.runRecord);
 
+        if (reason === 'error') {
+          this.spinner.fail(`Training failed with exit code ${code}`);
+        } else if (reason === 'timeboxed') {
+          this.spinner.succeed(`Training timeboxed successfully`);
+        } else {
+          this.spinner.succeed(`Training completed successfully`);
+        }
+
         resolve({
           success: code === 0 || reason === 'timeboxed',
           exitCode: code,
@@ -160,6 +173,8 @@ export class PythonRunner {
         this.runRecord.endTime = Date.now();
         await this.store.saveRun(this.runRecord);
 
+        this.spinner.fail(`Failed to start Python process: ${err.message}`);
+
         resolve({
           success: false,
           exitCode: null,
@@ -173,16 +188,18 @@ export class PythonRunner {
 
   private async handleProgress(data: any) {
     if (data.step !== undefined && data.loss !== undefined) {
-      console.log(`[Progress] Step: ${data.step}, Loss: ${data.loss}`);
+      this.spinner.text = `Training... Step: ${data.step} | Loss: ${data.loss.toFixed(4)}`;
     } else if (data.event === 'checkpoint_saved') {
-      console.log(`[Checkpoint] Saved at ${data.path}`);
+      this.spinner.info(`Checkpoint saved at ${data.path}`);
+      this.spinner.start(); // Resume spinner after info
       if (!this.runRecord.checkpoints) {
         this.runRecord.checkpoints = [];
       }
       this.runRecord.checkpoints.push(data.path);
       await this.store.saveRun(this.runRecord);
     } else {
-      console.log(`[Progress] ${JSON.stringify(data)}`);
+      this.spinner.info(`[Progress] ${JSON.stringify(data)}`);
+      this.spinner.start();
     }
   }
 
