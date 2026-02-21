@@ -59,11 +59,12 @@ program
   .description('Show current resource status')
   .action(async () => {
     const monitor = new ResourceMonitor();
-    const usage = await monitor.getUsage();
+    const usage = await monitor.getState();
     console.log('Resource Status:');
-    console.log(`CPU Usage: ${usage.cpuPercent.toFixed(2)}%`);
-    console.log(`RAM Usage: ${usage.ramUsedGb.toFixed(2)}GB / ${usage.ramTotalGb.toFixed(2)}GB`);
-    console.log(`GPU Memory: ${usage.gpuMemoryUsedGb}GB / ${usage.gpuMemoryTotalGb}GB`);
+    console.log(`CPU Load: ${usage.cpuLoad}`);
+    console.log(`RAM Free: ${usage.ramFreeGB}GB`);
+    console.log(`GPU VRAM Free: ${usage.gpuVRAMFreeMB ?? 'Unknown'}MB`);
+    console.log(`Temp: ${usage.tempC ?? 'Unknown'}C`);
   });
 
 import { fileURLToPath } from 'url';
