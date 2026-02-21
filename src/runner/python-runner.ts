@@ -1,6 +1,7 @@
 import { spawn, ChildProcess } from 'child_process';
 import { createInterface } from 'readline';
 import { Config } from '../config/schema.js';
+import { Governor } from '../governor/policy.js';
 
 export interface RunResult {
   success: boolean;
@@ -13,9 +14,19 @@ export class PythonRunner {
   private process: ChildProcess | null = null;
   private startTime: number = 0;
 
-  constructor(private config: Config) {}
+  constructor(private config: Config, private governor: Governor) {}
 
   public async run(): Promise<RunResult> {
+    const permission = await this.governor.canStartRun();
+    if (!permission.allowed) {
+      return {
+        success: false,
+        exitCode: null,
+        error: `Governor rejected run: ${permission.reason}`,
+        durationMs: 0
+      };
+    }
+
     this.startTime = Date.now();
     
     return new Promise((resolve) => {

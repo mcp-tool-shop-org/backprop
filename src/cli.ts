@@ -2,6 +2,8 @@ import { Command } from 'commander';
 import { ConfigSchema } from './config/schema.js';
 import { PythonRunner } from './runner/python-runner.js';
 import { ResourceMonitor } from './governor/resource-monitor.js';
+import { TokenBucket } from './governor/token-bucket.js';
+import { Governor } from './governor/policy.js';
 
 export const program = new Command();
 
@@ -31,7 +33,10 @@ program
       });
 
       console.log(`Starting training run for ${config.trainingScriptPath}...`);
-      const runner = new PythonRunner(config);
+      const tokenBucket = new TokenBucket();
+      const monitor = new ResourceMonitor();
+      const governor = new Governor(tokenBucket, monitor, config.maxParallel);
+      const runner = new PythonRunner(config, governor);
       const result = await runner.run();
 
       if (result.success) {
