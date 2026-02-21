@@ -4,6 +4,7 @@ import { PythonRunner } from './runner/python-runner.js';
 import { ResourceMonitor } from './governor/resource-monitor.js';
 import { TokenBucket } from './governor/token-bucket.js';
 import { Governor } from './governor/policy.js';
+import { ExperimentStore } from './experiments/store.js';
 
 export const program = new Command();
 
@@ -21,6 +22,8 @@ program
   .option('-g, --gpu-memory-limit-gb <gb>', 'GPU memory limit in GB')
   .option('-p, --max-parallel <count>', 'Maximum parallel runs', '1')
   .option('-c, --checkpoint-every-minutes <minutes>', 'Checkpoint interval in minutes')
+  .option('-r, --resume-from <path>', 'Path to checkpoint to resume from')
+  .option('--run-id <id>', 'Unique identifier for this run')
   .action(async (script, options) => {
     try {
       const config = ConfigSchema.parse({
@@ -30,13 +33,16 @@ program
         gpuMemoryLimitGb: options.gpuMemoryLimitGb ? parseFloat(options.gpuMemoryLimitGb) : undefined,
         maxParallel: parseInt(options.maxParallel, 10),
         checkpointEveryMinutes: options.checkpointEveryMinutes ? parseFloat(options.checkpointEveryMinutes) : undefined,
+        resumeFrom: options.resumeFrom,
+        runId: options.runId,
       });
 
       console.log(`Starting training run for ${config.trainingScriptPath}...`);
       const tokenBucket = new TokenBucket();
       const monitor = new ResourceMonitor();
       const governor = new Governor(tokenBucket, monitor, config.maxParallel);
-      const runner = new PythonRunner(config, governor);
+      const store = new ExperimentStore();
+      const runner = new PythonRunner(config, governor, store);
       const result = await runner.run();
 
       if (result.success) {

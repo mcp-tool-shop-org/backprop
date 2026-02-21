@@ -2,6 +2,8 @@ import { spawn, ChildProcess } from 'child_process';
 import { createInterface } from 'readline';
 import { Config } from '../config/schema.js';
 import { Governor } from '../governor/policy.js';
+import { ExperimentStore, RunRecord } from '../experiments/store.js';
+import * as readline from 'readline';
 
 export interface RunResult {
   success: boolean;
@@ -15,8 +17,13 @@ export class PythonRunner {
   private process: ChildProcess | null = null;
   private startTime: number = 0;
   private abortController: AbortController;
+  private runRecord!: RunRecord;
 
-  constructor(private config: Config, private governor: Governor) {
+  constructor(
+    private config: Config, 
+    private governor: Governor,
+    private store: ExperimentStore
+  ) {
     this.abortController = new AbortController();
   }
 
@@ -33,6 +40,26 @@ export class PythonRunner {
     }
 
     this.startTime = Date.now();
+    
+    // Initialize or fetch run record
+    const existingRun = await this.store.getRun(this.config.runId);
+    this.runRecord = existingRun || {
+      id: this.config.runId,
+      scriptPath: this.config.trainingScriptPath,
+      status: 'running',
+      startTime: this.startTime
+    };
+    this.runRecord.status = 'running';
+    await this.store.saveRun(this.runRecord);
+
+    // Auto-resume logic
+    if (!this.config.resumeFrom) {
+      const latestCheckpoint = await this.store.getLatestCheckpoint(this.config.runId);
+      if (latestCheckpoint) {
+        this.config.resumeFrom = latestCheckpoint;
+        console.log(`[Runner] Auto-resuming from checkpoint: ${latestCheckpoint}`);
+      }
+    }
     
     return new Promise((resolve) => {
       const args = [this.config.trainingScriptPath];
@@ -97,7 +124,7 @@ export class PythonRunner {
         }
       }, timeoutMs);
 
-      this.process.on('close', (code, signal) => {
+      this.process.on('close', async (code, signal) => {
         clearTimeout(timeoutId);
         if (forceKillTimeoutId) clearTimeout(forceKillTimeoutId);
         
@@ -110,6 +137,10 @@ export class PythonRunner {
           reason = 'error';
         }
         
+        this.runRecord.status = reason === 'error' ? 'failed' : 'completed';
+        this.runRecord.endTime = Date.now();
+        await this.store.saveRun(this.runRecord);
+
         resolve({
           success: code === 0 || reason === 'timeboxed',
           exitCode: code,
@@ -119,12 +150,16 @@ export class PythonRunner {
         });
       });
       
-      this.process.on('error', (err) => {
+      this.process.on('error', async (err) => {
         clearTimeout(timeoutId);
         if (forceKillTimeoutId) clearTimeout(forceKillTimeoutId);
         
         const durationMs = Date.now() - this.startTime;
         
+        this.runRecord.status = 'failed';
+        this.runRecord.endTime = Date.now();
+        await this.store.saveRun(this.runRecord);
+
         resolve({
           success: false,
           exitCode: null,
@@ -136,11 +171,16 @@ export class PythonRunner {
     });
   }
 
-  private handleProgress(data: any) {
+  private async handleProgress(data: any) {
     if (data.step !== undefined && data.loss !== undefined) {
       console.log(`[Progress] Step: ${data.step}, Loss: ${data.loss}`);
     } else if (data.event === 'checkpoint_saved') {
       console.log(`[Checkpoint] Saved at ${data.path}`);
+      if (!this.runRecord.checkpoints) {
+        this.runRecord.checkpoints = [];
+      }
+      this.runRecord.checkpoints.push(data.path);
+      await this.store.saveRun(this.runRecord);
     } else {
       console.log(`[Progress] ${JSON.stringify(data)}`);
     }

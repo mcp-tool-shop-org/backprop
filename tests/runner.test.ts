@@ -4,6 +4,7 @@ import { ConfigSchema } from '../src/config/schema.js';
 import { Governor } from '../src/governor/policy.js';
 import { TokenBucket } from '../src/governor/token-bucket.js';
 import { ResourceMonitor } from '../src/governor/resource-monitor.js';
+import { ExperimentStore } from '../src/experiments/store.js';
 import * as child_process from 'child_process';
 import { EventEmitter } from 'events';
 import { PassThrough } from 'stream';
@@ -13,6 +14,7 @@ vi.mock('child_process');
 describe('PythonRunner', () => {
   let governor: Governor;
   let mockSpawn: any;
+  let mockStore: any;
 
   beforeEach(() => {
     vi.useFakeTimers();
@@ -26,6 +28,13 @@ describe('PythonRunner', () => {
     });
     governor = new Governor(bucket, monitor, 2, 4);
     
+    mockStore = {
+      getRun: vi.fn().mockResolvedValue(null),
+      saveRun: vi.fn().mockResolvedValue(undefined),
+      getLatestCheckpoint: vi.fn().mockResolvedValue(null),
+      listExperiments: vi.fn().mockResolvedValue([])
+    } as unknown as ExperimentStore;
+
     mockSpawn = vi.spyOn(child_process, 'spawn').mockImplementation(() => {
       const mockProcess = new EventEmitter() as any;
       mockProcess.stdout = new PassThrough();
@@ -50,7 +59,7 @@ describe('PythonRunner', () => {
 
   it('1. should run successfully', async () => {
     const config = ConfigSchema.parse({ trainingScriptPath: 'train.py' });
-    const runner = new PythonRunner(config, governor);
+    const runner = new PythonRunner(config, governor, mockStore);
     
     const runPromise = runner.run();
     await vi.advanceTimersByTimeAsync(150);
@@ -63,7 +72,7 @@ describe('PythonRunner', () => {
 
   it('2. should pass framework flag', async () => {
     const config = ConfigSchema.parse({ trainingScriptPath: 'train.py', framework: 'pytorch' });
-    const runner = new PythonRunner(config, governor);
+    const runner = new PythonRunner(config, governor, mockStore);
     
     const runPromise = runner.run();
     await vi.advanceTimersByTimeAsync(150);
@@ -74,7 +83,7 @@ describe('PythonRunner', () => {
 
   it('3. should pass checkpoint interval', async () => {
     const config = ConfigSchema.parse({ trainingScriptPath: 'train.py', checkpointEveryMinutes: 5 });
-    const runner = new PythonRunner(config, governor);
+    const runner = new PythonRunner(config, governor, mockStore);
     
     const runPromise = runner.run();
     await vi.advanceTimersByTimeAsync(150);
@@ -85,7 +94,7 @@ describe('PythonRunner', () => {
 
   it('4. should pass resume-from flag', async () => {
     const config = ConfigSchema.parse({ trainingScriptPath: 'train.py', resumeFrom: 'ckpt-1' });
-    const runner = new PythonRunner(config, governor);
+    const runner = new PythonRunner(config, governor, mockStore);
     
     const runPromise = runner.run();
     await vi.advanceTimersByTimeAsync(150);
@@ -96,7 +105,7 @@ describe('PythonRunner', () => {
 
   it('5. should pass run-id', async () => {
     const config = ConfigSchema.parse({ trainingScriptPath: 'train.py', runId: 'test-run' });
-    const runner = new PythonRunner(config, governor);
+    const runner = new PythonRunner(config, governor, mockStore);
     
     const runPromise = runner.run();
     await vi.advanceTimersByTimeAsync(150);
@@ -107,7 +116,7 @@ describe('PythonRunner', () => {
 
   it('6. should timebox run and send SIGINT', async () => {
     const config = ConfigSchema.parse({ trainingScriptPath: 'train.py', maxRunMinutes: 10 });
-    const runner = new PythonRunner(config, governor);
+    const runner = new PythonRunner(config, governor, mockStore);
     
     let mockProcess: any;
     mockSpawn.mockImplementation(() => {
@@ -138,7 +147,7 @@ describe('PythonRunner', () => {
 
   it('7. should send SIGKILL if SIGINT fails', async () => {
     const config = ConfigSchema.parse({ trainingScriptPath: 'train.py', maxRunMinutes: 10 });
-    const runner = new PythonRunner(config, governor);
+    const runner = new PythonRunner(config, governor, mockStore);
     
     let mockProcess: any;
     mockSpawn.mockImplementation(() => {
@@ -173,7 +182,7 @@ describe('PythonRunner', () => {
 
   it('8. should handle process error', async () => {
     const config = ConfigSchema.parse({ trainingScriptPath: 'train.py' });
-    const runner = new PythonRunner(config, governor);
+    const runner = new PythonRunner(config, governor, mockStore);
     
     mockSpawn.mockImplementation(() => {
       const mockProcess = new EventEmitter() as any;
@@ -200,7 +209,7 @@ describe('PythonRunner', () => {
 
   it('9. should handle non-zero exit code', async () => {
     const config = ConfigSchema.parse({ trainingScriptPath: 'train.py' });
-    const runner = new PythonRunner(config, governor);
+    const runner = new PythonRunner(config, governor, mockStore);
     
     mockSpawn.mockImplementation(() => {
       const mockProcess = new EventEmitter() as any;
@@ -228,7 +237,7 @@ describe('PythonRunner', () => {
 
   it('10. should allow manual stop', async () => {
     const config = ConfigSchema.parse({ trainingScriptPath: 'train.py' });
-    const runner = new PythonRunner(config, governor);
+    const runner = new PythonRunner(config, governor, mockStore);
     
     let mockProcess: any;
     mockSpawn.mockImplementation(() => {

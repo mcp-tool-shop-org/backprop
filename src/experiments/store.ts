@@ -54,6 +54,7 @@ export class ExperimentStore {
   }
 
   private async persist() {
+    await fs.mkdir(path.dirname(this.dbPath), { recursive: true });
     const obj = Object.fromEntries(this.db);
     await fs.writeFile(this.dbPath, JSON.stringify(obj, null, 2), 'utf-8');
   }

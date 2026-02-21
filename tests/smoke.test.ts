@@ -4,6 +4,7 @@ import { ConfigSchema } from '../src/config/schema.js';
 import { Governor } from '../src/governor/policy.js';
 import { TokenBucket } from '../src/governor/token-bucket.js';
 import { ResourceMonitor } from '../src/governor/resource-monitor.js';
+import { ExperimentStore } from '../src/experiments/store.js';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -20,8 +21,9 @@ describe('Smoke Test', () => {
     const bucket = new TokenBucket(4, 1, 60000);
     const monitor = new ResourceMonitor();
     const governor = new Governor(bucket, monitor, 2, 0); // 0 RAM limit to ensure it runs
+    const store = new ExperimentStore();
     
-    const runner = new PythonRunner(config, governor);
+    const runner = new PythonRunner(config, governor, store);
     const result = await runner.run();
     
     expect(result.success).toBe(true);
