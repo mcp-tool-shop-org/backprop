@@ -1,6 +1,6 @@
 {
   "name": "@mcptoolshop/backprop",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "CLI-first ML trainer with intelligent resource governance",
   "private": false,
   "type": "module",
@@ -19,7 +19,8 @@
   "files": [
     "dist",
     "CHANGELOG.md",
-    "README.md"
+    "README.md",
+    "logo.svg"
   ],
   "scripts": {
     "build": "tsc",

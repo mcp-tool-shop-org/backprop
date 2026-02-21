@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 512 512" height="512" width="512">
+  <rect fill="#0A0A0A" rx="96" height="512" width="512"></rect>
+  
+  
+  <circle fill="#00FFAA" r="28" cy="156" cx="156"></circle>
+  <circle fill="#00FFAA" r="28" cy="156" cx="356"></circle>
+  <circle fill="#00FFAA" r="28" cy="356" cx="256"></circle>
+  
+  
+  <path stroke-linecap="round" stroke-width="18" stroke="#00FFAA" d="M184 156 L328 156"></path>
+  <path stroke-linecap="round" stroke-width="18" stroke="#00FFAA" d="M356 184 L256 328"></path>
+  <path stroke-linecap="round" stroke-width="18" stroke="#00FFAA" d="M156 184 L256 328"></path>
+  
+  
+  <text letter-spacing="-2" text-anchor="middle" fill="#FFFFFF" font-weight="700" font-size="78" font-family="system-ui, sans-serif" y="455" x="256">Backprop</text>
+</svg>

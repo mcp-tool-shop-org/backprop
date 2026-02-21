@@ -1,6 +1,12 @@
-# Backprop
+<p align="center">
+  <img src="./logo.svg" alt="Backprop Logo" width="250" />
+</p>
 
-A CLI-first ML trainer that defaults to short, safe 10-minute runs with intelligent resource governance.
+<h1 align="center">Backprop</h1>
+
+<p align="center">
+  <em>A CLI-first ML trainer that defaults to short, safe 10-minute runs with intelligent resource governance.</em>
+</p>
 
 ## Getting Started
 
