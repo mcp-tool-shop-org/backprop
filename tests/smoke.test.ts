@@ -7,6 +7,8 @@ import { ResourceMonitor } from '../src/governor/resource-monitor.js';
 import { ExperimentStore } from '../src/experiments/store.js';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
+import * as fs from 'fs/promises';
+import * as os from 'os';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -22,11 +24,45 @@ describe('Smoke Test', () => {
     const monitor = new ResourceMonitor();
     const governor = new Governor(bucket, monitor, 2, 0); // 0 RAM limit to ensure it runs
     const store = new ExperimentStore();
+    await store.init();
     
     const runner = new PythonRunner(config, governor, store);
     const result = await runner.run();
     
     expect(result.success).toBe(true);
     expect(result.reason).toBe('completed');
+  });
+
+  it('should resume a run', async () => {
+    const dummyScript = path.join(__dirname, 'dummy.py');
+    const runId = 'test-resume-run';
+    
+    const store = new ExperimentStore();
+    await store.init();
+    
+    // Create a fake checkpoint
+    await store.saveRun({
+      id: runId,
+      scriptPath: dummyScript,
+      status: 'completed',
+      startTime: Date.now(),
+      checkpoints: ['/fake/checkpoint/path']
+    });
+
+    const config = ConfigSchema.parse({
+      trainingScriptPath: dummyScript,
+      maxRunMinutes: 0.01,
+      runId: runId
+    });
+    
+    const bucket = new TokenBucket(4, 1, 60000);
+    const monitor = new ResourceMonitor();
+    const governor = new Governor(bucket, monitor, 2, 0);
+    
+    const runner = new PythonRunner(config, governor, store);
+    const result = await runner.run();
+    
+    expect(result.success).toBe(true);
+    expect(config.resumeFrom).toBe('/fake/checkpoint/path');
   });
 });

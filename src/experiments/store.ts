@@ -8,6 +8,7 @@ export interface RunRecord {
   scriptPath: string;
   status: 'running' | 'completed' | 'failed' | 'timeboxed' | 'stopped';
   lastCheckpoint?: string;
+  checkpoints?: string[];
   lastStep?: number;
   lastLoss?: number;
   startTime: number;
@@ -46,6 +47,9 @@ export class ExperimentStore {
 
   async getLatestCheckpoint(runId: string): Promise<string | undefined> {
     const run = this.db.get(runId);
+    if (run?.checkpoints && run.checkpoints.length > 0) {
+      return run.checkpoints[run.checkpoints.length - 1];
+    }
     return run?.lastCheckpoint;
   }
 
