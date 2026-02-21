@@ -7,7 +7,7 @@ A CLI-first ML trainer that defaults to short, safe 10-minute runs with intellig
 ### 1. Install
 
 ```bash
-npm install -g backprop
+npm install -g @mcptoolshop/backprop
 ```
 
 ### 2. Run a Training Script
