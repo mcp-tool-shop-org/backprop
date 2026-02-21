@@ -2,53 +2,48 @@
 
 A CLI-first ML trainer that defaults to short, safe 10-minute runs with intelligent resource governance.
 
-## Features
-
-- **Timeboxed Runs**: Defaults to 10-minute runs to prevent runaway costs and resource hogging.
-- **Intelligent Governor**: Monitors CPU, RAM, and GPU VRAM to ensure safe execution.
-- **Auto-Resume**: Automatically resumes from the latest checkpoint if a run is interrupted.
-- **Experiment Tracking**: Keeps track of all your runs, their status, and checkpoints.
-
 ## Getting Started
 
-### 1. Installation
+### 1. Install
 
 ```bash
 npm install -g backprop
 ```
 
-### 2. Prepare your Python script
-
-Your Python script should output JSONL (JSON Lines) to `stdout` for progress tracking.
-
-```python
-# train.py
-import json
-import time
-
-for step in range(1, 101):
-    # Simulate training
-    time.sleep(1)
-    
-    # Report progress
-    print(json.dumps({"step": step, "loss": 1.0 / step}), flush=True)
-    
-    # Report checkpoints
-    if step % 10 == 0:
-        print(json.dumps({"event": "checkpoint_saved", "path": f"/tmp/ckpt-{step}.pt"}), flush=True)
-```
-
-### 3. Run it safely
+### 2. Run a Training Script
 
 ```bash
-backprop run train.py --name "My First Experiment"
+backprop run train.py --name my-first-run
 ```
 
-Backprop will automatically:
-1. Check if your system has enough RAM/GPU resources.
+That's it. Backprop will automatically:
+1. Check if your system has enough RAM and GPU VRAM.
 2. Start the script and track its progress.
 3. Gracefully shut it down after 10 minutes (configurable via `-m`).
 4. Save the run metadata and checkpoints to `~/.backprop/experiments.json`.
+
+## How It Works
+
+### The Governor
+Backprop includes an intelligent Governor that monitors your system resources before and during a run. It checks CPU load, available RAM, and GPU VRAM/Temperature (via `nvidia-smi`). If your system is under heavy load or running too hot, the Governor will prevent the run from starting or pause it until resources free up.
+
+### Short Runs + Auto-Resume
+Instead of running a script for 48 hours straight and praying it doesn't crash, Backprop encourages **timeboxed runs**. By default, runs are limited to 10 minutes. 
+
+If your script outputs checkpoint paths (e.g., `{"event": "checkpoint_saved", "path": "/tmp/ckpt.pt"}`), Backprop remembers them. You can easily resume an interrupted or timeboxed run:
+
+```bash
+backprop resume <run-id>
+```
+
+### Resource Monitoring
+Backprop uses `nvidia-smi` to accurately monitor NVIDIA GPUs. It automatically selects the GPU with the most free VRAM and ensures it meets your minimum requirements before starting a run.
+
+You can check your system's current resource status at any time:
+
+```bash
+backprop status
+```
 
 ## Usage
 
@@ -88,22 +83,10 @@ You can create a `backprop.config.json` in your project root:
 }
 ```
 
-### Resume a run
-
-```bash
-backprop resume <run-id>
-```
-
 ### List experiments
 
 ```bash
 backprop list
-```
-
-### Check status
-
-```bash
-backprop status [run-id]
 ```
 
 ## Development
