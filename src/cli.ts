@@ -35,6 +35,9 @@ program
   .option('-r, --resume-from <path>', 'Path to checkpoint to resume from')
   .option('--run-id <id>', 'Unique identifier for this run')
   .option('-n, --name <name>', 'Human-readable name for this experiment')
+  .option('--gpu-probe <type>', 'GPU probe type (auto | nvidia-smi | none)')
+  .option('--gpu-min-vram <mb>', 'Minimum free VRAM in MB to start run')
+  .option('--gpu-max-temp <c>', 'Maximum GPU temperature in Celsius')
   .addHelpText('after', `
 Description:
   Executes a Python training script with intelligent resource governance.
@@ -56,6 +59,13 @@ Description:
       if (options.resumeFrom) cliOptions.resumeFrom = options.resumeFrom;
       if (options.runId) cliOptions.runId = options.runId;
 
+      if (options.gpuProbe || options.gpuMinVram || options.gpuMaxTemp) {
+        cliOptions.gpu = {};
+        if (options.gpuProbe) cliOptions.gpu.probe = options.gpuProbe;
+        if (options.gpuMinVram) cliOptions.gpu.minFreeVramMB = parseInt(options.gpuMinVram, 10);
+        if (options.gpuMaxTemp) cliOptions.gpu.maxTempC = parseInt(options.gpuMaxTemp, 10);
+      }
+
       const config = await loadConfig(cliOptions, globalOpts.config);
 
       if (globalOpts.verbose) {
@@ -70,7 +80,15 @@ Description:
       console.log(`Starting training run for ${config.trainingScriptPath}...`);
       const tokenBucket = new TokenBucket();
       const monitor = new ResourceMonitor();
-      const governor = new Governor(tokenBucket, monitor, config.maxParallel);
+      const governor = new Governor(
+        tokenBucket, 
+        monitor, 
+        config.maxParallel,
+        4, // minFreeRamGB
+        config.gpu.maxTempC,
+        config.gpu.minFreeVramMB,
+        config.gpu.probe
+      );
       const store = new ExperimentStore();
       await store.init();
       
@@ -146,7 +164,15 @@ program
 
       const tokenBucket = new TokenBucket();
       const monitor = new ResourceMonitor();
-      const governor = new Governor(tokenBucket, monitor, 1);
+      const governor = new Governor(
+        tokenBucket, 
+        monitor, 
+        1, // maxParallel
+        4, // minFreeRamGB
+        config.gpu.maxTempC,
+        config.gpu.minFreeVramMB,
+        config.gpu.probe
+      );
       const runner = new PythonRunner(config, governor, store);
       const result = await runner.run();
 
