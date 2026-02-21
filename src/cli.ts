@@ -5,6 +5,7 @@ import { ResourceMonitor } from './governor/resource-monitor.js';
 import { TokenBucket } from './governor/token-bucket.js';
 import { Governor } from './governor/policy.js';
 import { ExperimentStore } from './experiments/store.js';
+import { getGpuProbe } from './governor/probes/index.js';
 
 export const program = new Command();
 
@@ -241,12 +242,13 @@ program
 
     const monitor = new ResourceMonitor();
     const usage = await monitor.getState();
+    const gpuState = await getGpuProbe('auto');
+    
     console.log('Resource Status:');
     console.log(`CPU Load: ${usage.cpuLoad.toFixed(2)}`);
     console.log(`RAM Free: ${usage.ramFreeGB.toFixed(2)}GB`);
-    console.log(`GPUs Detected: ${usage.gpuCount}`);
-    console.log(`GPU VRAM Free: ${usage.gpuVRAMFreeMB ?? 'Unknown'}MB`);
-    console.log(`Temp: ${usage.tempC ?? 'Unknown'}C`);
+    console.log(`GPU VRAM Free: ${gpuState.vramFreeMB ?? 'Unknown'}MB`);
+    console.log(`Temp: ${gpuState.temperatureC ?? 'Unknown'}C`);
     if (usage.monitoringFailed) {
       console.log('Warning: Advanced resource monitoring failed. Running in conservative mode.');
     }
