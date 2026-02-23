@@ -2,8 +2,17 @@
   "name": "backprop-vscode",
   "displayName": "Backprop",
   "description": "CLI-first ML trainer with intelligent resource governance directly in VS Code",
-  "version": "0.1.0",
-  "publisher": "mcptoolshop",
+  "version": "0.2.2",
+  "publisher": "mcp-tool-shop",
+  "license": "MIT",
+  "author": "mcp-tool-shop <64996768+mcp-tool-shop@users.noreply.github.com>",
+  "icon": "icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mcp-tool-shop-org/backprop.git",
+    "directory": "vscode-extension"
+  },
+  "homepage": "https://github.com/mcp-tool-shop-org/backprop#vs-code-extension",
   "engines": {
     "vscode": "^1.85.0"
   },
@@ -19,6 +28,67 @@
         "command": "backprop.run",
         "title": "Run with Backprop",
         "icon": "$(play)"
+      },
+      {
+        "command": "backprop.runWithOptions",
+        "title": "Run with Backprop (Configure...)",
+        "icon": "$(gear)"
+      },
+      {
+        "command": "backprop.resumeExperiment",
+        "title": "Resume Run",
+        "icon": "$(debug-continue)"
+      },
+      {
+        "command": "backprop.stopExperiment",
+        "title": "Stop Run",
+        "icon": "$(debug-stop)"
+      },
+      {
+        "command": "backprop.showTerminal",
+        "title": "Show Terminal",
+        "icon": "$(terminal)"
+      },
+      {
+        "command": "backprop.refreshExperiments",
+        "title": "Refresh Experiments",
+        "icon": "$(refresh)"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "backprop",
+          "title": "Backprop",
+          "icon": "$(beaker)"
+        }
+      ]
+    },
+    "views": {
+      "backprop": [
+        {
+          "id": "backpropExperiments",
+          "name": "Experiments"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "backprop.run",
+        "key": "ctrl+alt+r",
+        "mac": "cmd+alt+r",
+        "when": "editorLangId == python"
+      },
+      {
+        "command": "backprop.runWithOptions",
+        "key": "ctrl+alt+shift+r",
+        "mac": "cmd+alt+shift+r",
+        "when": "editorLangId == python"
+      },
+      {
+        "command": "backprop.stopExperiment",
+        "key": "ctrl+alt+s",
+        "mac": "cmd+alt+s"
       }
     ],
     "menus": {
@@ -27,6 +97,50 @@
           "command": "backprop.run",
           "when": "resourceLangId == python",
           "group": "navigation"
+        },
+        {
+          "command": "backprop.runWithOptions",
+          "when": "resourceLangId == python",
+          "group": "navigation"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "backprop.refreshExperiments",
+          "when": "view == backpropExperiments",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "backprop.stopExperiment",
+          "when": "view == backpropExperiments && viewItem == runningExperiment",
+          "group": "inline"
+        },
+        {
+          "command": "backprop.showTerminal",
+          "when": "view == backpropExperiments && viewItem == runningExperiment",
+          "group": "inline"
+        },
+        {
+          "command": "backprop.resumeExperiment",
+          "when": "view == backpropExperiments && viewItem == stoppedExperiment",
+          "group": "inline"
+        },
+        {
+          "command": "backprop.stopExperiment",
+          "when": "view == backpropExperiments && viewItem == runningExperiment",
+          "group": "1_actions"
+        },
+        {
+          "command": "backprop.showTerminal",
+          "when": "view == backpropExperiments && viewItem == runningExperiment",
+          "group": "1_actions"
+        },
+        {
+          "command": "backprop.resumeExperiment",
+          "when": "view == backpropExperiments && viewItem == stoppedExperiment",
+          "group": "1_actions"
         }
       ]
     }
