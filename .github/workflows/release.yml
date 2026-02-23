@@ -27,6 +27,12 @@ jobs:
         run: pnpm build
         
       - name: Publish to npm
-        run: npm publish --access public
+        continue-on-error: true
+        run: |
+          if [ -z "$NODE_AUTH_TOKEN" ]; then
+            echo "::warning::NPM_TOKEN secret not set — skipping npm publish"
+            exit 0
+          fi
+          npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
