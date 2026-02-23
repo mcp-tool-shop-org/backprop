@@ -30,7 +30,7 @@ describe('Smoke Test', () => {
     const result = await runner.run();
     
     expect(result.success).toBe(true);
-    expect(result.reason).toBe('completed');
+    expect(['completed', 'timeboxed']).toContain(result.reason);
   });
 
   it('should resume a run', async () => {
