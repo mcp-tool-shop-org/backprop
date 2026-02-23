@@ -8,25 +8,25 @@ importers:
 
   .:
     dependencies:
+      commander:
+        specifier: ^12.0.0
+        version: 12.1.0
       ora:
         specifier: ^9.3.0
         version: 9.3.0
+      zod:
+        specifier: ^3.22.0
+        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: ^20.0.0
         version: 20.19.33
-      commander:
-        specifier: ^12.0.0
-        version: 12.1.0
       typescript:
         specifier: ^5.4.0
         version: 5.9.3
       vitest:
         specifier: ^1.4.0
         version: 1.6.1(@types/node@20.19.33)
-      zod:
-        specifier: ^3.22.0
-        version: 3.25.76
 
   vscode-extension:
     devDependencies:
