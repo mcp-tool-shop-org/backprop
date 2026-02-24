@@ -1,9 +1,9 @@
 import { spawn, ChildProcess } from 'child_process';
 import { createInterface } from 'readline';
+import { access, constants } from 'fs/promises';
 import { Config } from '../config/schema.js';
 import { Governor } from '../governor/policy.js';
 import { ExperimentStore, RunRecord } from '../experiments/store.js';
-import * as readline from 'readline';
 import ora, { Ora } from 'ora';
 
 export interface RunResult {
@@ -42,8 +42,21 @@ export class PythonRunner {
       };
     }
 
+    // Verify training script exists before proceeding
+    try {
+      await access(this.config.trainingScriptPath, constants.R_OK);
+    } catch {
+      return {
+        success: false,
+        exitCode: null,
+        error: `Training script not found: ${this.config.trainingScriptPath}`,
+        durationMs: 0,
+        reason: 'script_not_found'
+      };
+    }
+
     this.startTime = Date.now();
-    
+
     // Initialize or fetch run record
     const existingRun = await this.store.getRun(this.config.runId);
     this.runRecord = existingRun || {
@@ -112,7 +125,7 @@ export class PythonRunner {
 
       // Timeboxing & graceful stop
       const timeoutMs = this.config.maxRunMinutes * 60 * 1000;
-      let forceKillTimeoutId: NodeJS.Timeout;
+      let forceKillTimeoutId: NodeJS.Timeout | undefined;
       
       const timeoutId = setTimeout(() => {
         if (this.process && this.process.exitCode === null) {

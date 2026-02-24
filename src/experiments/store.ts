@@ -1,4 +1,5 @@
 import * as fs from 'fs/promises';
+import { openSync, closeSync, writeFileSync } from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 
@@ -17,10 +18,12 @@ export interface RunRecord {
 
 export class ExperimentStore {
   private dbPath: string;
+  private lockPath: string;
   private db = new Map<string, RunRecord>();
 
   constructor(dbDir: string = path.join(os.homedir(), '.backprop')) {
     this.dbPath = path.join(dbDir, 'experiments.json');
+    this.lockPath = this.dbPath + '.lock';
   }
 
   async init() {
@@ -31,8 +34,13 @@ export class ExperimentStore {
       for (const [k, v] of Object.entries(parsed)) {
         this.db.set(k, v as RunRecord);
       }
-    } catch (e) {
-      // Ignore if file doesn't exist or is invalid
+    } catch (e: unknown) {
+      const err = e as NodeJS.ErrnoException;
+      if (err.code === 'ENOENT') {
+        // First run — no file yet, this is normal
+      } else {
+        console.warn(`Warning: Could not load experiments DB (${err.message}). Starting fresh.`);
+      }
     }
   }
 
@@ -60,6 +68,27 @@ export class ExperimentStore {
   private async persist() {
     await fs.mkdir(path.dirname(this.dbPath), { recursive: true });
     const obj = Object.fromEntries(this.db);
-    await fs.writeFile(this.dbPath, JSON.stringify(obj, null, 2), 'utf-8');
+    const json = JSON.stringify(obj, null, 2);
+
+    // Atomic write with file lock to prevent concurrent clobber
+    let fd: number | undefined;
+    try {
+      fd = openSync(this.lockPath, 'wx');
+      await fs.writeFile(this.dbPath, json, 'utf-8');
+    } catch (lockErr: unknown) {
+      const err = lockErr as NodeJS.ErrnoException;
+      if (err.code === 'EEXIST') {
+        // Another process holds the lock — wait briefly and retry once
+        await new Promise(r => setTimeout(r, 200));
+        await fs.writeFile(this.dbPath, json, 'utf-8');
+      } else {
+        throw lockErr;
+      }
+    } finally {
+      if (fd !== undefined) {
+        closeSync(fd);
+      }
+      try { await fs.unlink(this.lockPath); } catch { /* already cleaned up */ }
+    }
   }
 }

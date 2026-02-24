@@ -1,5 +1,6 @@
 import { Command } from 'commander';
 import { loadConfig } from './config/index.js';
+import { Config } from './config/schema.js';
 import { PythonRunner } from './runner/python-runner.js';
 import { ResourceMonitor } from './governor/resource-monitor.js';
 import { TokenBucket } from './governor/token-bucket.js';
@@ -39,6 +40,7 @@ program
   .option('--gpu-probe <type>', 'GPU probe type (auto | nvidia-smi | none)')
   .option('--gpu-min-vram <mb>', 'Minimum free VRAM in MB to start run')
   .option('--gpu-max-temp <c>', 'Maximum GPU temperature in Celsius')
+  .option('--min-free-ram <gb>', 'Minimum free RAM in GB to start run (default: 4)')
   .addHelpText('after', `
 Description:
   Executes a Python training script with intelligent resource governance.
@@ -48,20 +50,21 @@ Description:
     try {
       const globalOpts = program.opts();
       
-      const cliOptions: any = {
+      const cliOptions: Partial<Config> = {
         trainingScriptPath: script,
       };
-      
+
       if (options.framework) cliOptions.framework = options.framework;
       if (options.maxRunMinutes) cliOptions.maxRunMinutes = parseFloat(options.maxRunMinutes);
       if (options.gpuMemoryLimit) cliOptions.gpuMemoryLimit = options.gpuMemoryLimit;
       if (options.maxParallel) cliOptions.maxParallel = parseInt(options.maxParallel, 10);
+      if (options.minFreeRam) cliOptions.minFreeRamGB = parseFloat(options.minFreeRam);
       if (options.checkpointEveryMinutes) cliOptions.checkpointEveryMinutes = parseFloat(options.checkpointEveryMinutes);
       if (options.resumeFrom) cliOptions.resumeFrom = options.resumeFrom;
       if (options.runId) cliOptions.runId = options.runId;
 
       if (options.gpuProbe || options.gpuMinVram || options.gpuMaxTemp) {
-        cliOptions.gpu = {};
+        cliOptions.gpu = {} as Config['gpu'];
         if (options.gpuProbe) cliOptions.gpu.probe = options.gpuProbe;
         if (options.gpuMinVram) cliOptions.gpu.minFreeVramMB = parseInt(options.gpuMinVram, 10);
         if (options.gpuMaxTemp) cliOptions.gpu.maxTempC = parseInt(options.gpuMaxTemp, 10);
@@ -82,10 +85,10 @@ Description:
       const tokenBucket = new TokenBucket();
       const monitor = new ResourceMonitor();
       const governor = new Governor(
-        tokenBucket, 
-        monitor, 
+        tokenBucket,
+        monitor,
         config.maxParallel,
-        4, // minFreeRamGB
+        config.minFreeRamGB,
         config.gpu.maxTempC,
         config.gpu.minFreeVramMB,
         config.gpu.probe
@@ -146,7 +149,7 @@ program
     
     try {
       const globalOpts = program.opts();
-      const cliOptions: any = {
+      const cliOptions: Partial<Config> = {
         trainingScriptPath: run.scriptPath,
         runId: runId,
       };
@@ -166,10 +169,10 @@ program
       const tokenBucket = new TokenBucket();
       const monitor = new ResourceMonitor();
       const governor = new Governor(
-        tokenBucket, 
-        monitor, 
-        1, // maxParallel
-        4, // minFreeRamGB
+        tokenBucket,
+        monitor,
+        config.maxParallel,
+        config.minFreeRamGB,
         config.gpu.maxTempC,
         config.gpu.minFreeVramMB,
         config.gpu.probe

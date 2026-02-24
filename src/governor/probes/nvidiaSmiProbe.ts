@@ -35,7 +35,11 @@ export async function probeNvidiaSmi(): Promise<{
         const temp = parseInt(parts[2], 10);
         const util = parseInt(parts[3], 10);
 
-        if (!isNaN(free) && free > maxFree) {
+        if (isNaN(used) || isNaN(free) || isNaN(temp) || isNaN(util)) {
+          continue; // Skip GPUs with unparseable values
+        }
+
+        if (free > maxFree) {
           maxFree = free;
           bestGpu = {
             vramUsedMB: used,

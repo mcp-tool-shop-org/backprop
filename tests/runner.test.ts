@@ -12,6 +12,10 @@ import * as probes from '../src/governor/probes/index.js';
 
 vi.mock('child_process');
 vi.mock('../src/governor/probes/index.js');
+vi.mock('fs/promises', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('fs/promises')>();
+  return { ...actual, access: vi.fn().mockResolvedValue(undefined) };
+});
 
 describe('PythonRunner', () => {
   let governor: Governor;
@@ -33,7 +37,7 @@ describe('PythonRunner', () => {
       utilizationPercent: 50
     });
     governor = new Governor(bucket, monitor, 2, 4);
-    
+
     mockStore = {
       getRun: vi.fn().mockResolvedValue(null),
       saveRun: vi.fn().mockResolvedValue(undefined),
