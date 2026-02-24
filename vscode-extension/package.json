@@ -20,7 +20,9 @@
     "Machine Learning",
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onView:backpropExperiments"
+  ],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
