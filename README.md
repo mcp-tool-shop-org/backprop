@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./logo.svg" alt="Backprop Logo" width="250" />
+  <img src="./logo.png" alt="Backprop Logo" width="250" />
 </p>
 
 <p align="center">

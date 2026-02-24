@@ -20,7 +20,7 @@
     "dist",
     "CHANGELOG.md",
     "README.md",
-    "logo.svg"
+    "logo.png"
   ],
   "scripts": {
     "build": "tsc",
