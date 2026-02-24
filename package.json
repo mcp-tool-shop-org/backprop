@@ -1,6 +1,6 @@
 {
   "name": "@mcptoolshop/backprop",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "CLI-first ML trainer with intelligent resource governance",
   "private": false,
   "type": "module",

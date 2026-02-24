@@ -2,7 +2,7 @@
   "name": "backprop-vscode",
   "displayName": "Backprop",
   "description": "CLI-first ML trainer with intelligent resource governance directly in VS Code",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "publisher": "mcp-tool-shop",
   "license": "MIT",
   "author": "mcp-tool-shop <64996768+mcp-tool-shop@users.noreply.github.com>",
