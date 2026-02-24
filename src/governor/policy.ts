@@ -43,8 +43,9 @@ export class Governor {
       if (gpuState.temperatureC >= this.maxTempC) {
         return { allowed: false, reason: `GPU temperature too high (${gpuState.temperatureC}°C >= ${this.maxTempC}°C). Cooling down.` };
       }
-      if (gpuState.temperatureC > 82) {
-        console.warn(`[Governor] Warning: GPU temperature is high (${gpuState.temperatureC}°C).`);
+      const warnThreshold = this.maxTempC - 3;
+      if (gpuState.temperatureC > warnThreshold) {
+        console.warn(`[Governor] Warning: GPU temperature is high (${gpuState.temperatureC}°C, limit ${this.maxTempC}°C).`);
       }
     }
 

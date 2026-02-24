@@ -66,6 +66,7 @@ Options:
 - `-n, --name <name>`: Human-readable name for this experiment
 - `-g, --gpu-memory-limit <limit>`: GPU memory limit (e.g., "80%" or "8" for GB)
 - `-p, --max-parallel <count>`: Maximum parallel runs
+- `--min-free-ram <gb>`: Minimum free RAM in GB to start run (default: 4)
 - `--gpu-probe <type>`: GPU probe type (auto | nvidia-smi | none)
 - `--gpu-min-vram <mb>`: Minimum free VRAM in MB to start run (default: 2500)
 - `--gpu-max-temp <c>`: Maximum GPU temperature in Celsius (default: 85)

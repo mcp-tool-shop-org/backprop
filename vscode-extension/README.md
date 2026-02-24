@@ -1,39 +1,51 @@
-# Backprop for VS Code
+<p align="center">
+  <img src="logo.png" alt="Backprop" width="280" />
+</p>
 
-Run, monitor, and manage concurrent ML training runs directly from your editor. Backprop is a CLI-first trainer with intelligent resource governance — this extension brings the full multirun workflow into VS Code.
+<p align="center">
+  <strong>Run, monitor, and manage ML training runs directly from VS Code.</strong>
+</p>
+
+<p align="center">
+  <a href="https://www.npmjs.com/package/@mcptoolshop/backprop">npm</a> &middot;
+  <a href="https://github.com/mcp-tool-shop-org/backprop">GitHub</a> &middot;
+  <a href="https://mcp-tool-shop-org.github.io/backprop/">Landing Page</a>
+</p>
+
+---
+
+Backprop is a CLI-first ML trainer with intelligent resource governance — timeboxed runs, GPU monitoring, and auto-resume from checkpoints. This extension brings the full workflow into your editor.
 
 ## Features
 
-### Concurrent Training Runs
+### Run Training Scripts
 
-Each training run launches in its own dedicated terminal. Run multiple experiments in parallel — the Governor's token bucket and resource monitoring ensure your machine stays healthy.
+Launch any Python training script directly from the editor. Each run gets its own dedicated terminal — run multiple experiments in parallel while the Governor keeps your machine healthy.
 
-- **Quick run**: Click the play button on any Python file
-- **Configured run**: Click the gear icon to set experiment name, timeout, and framework before launching
-- Every run gets a unique terminal (`Backprop: train #1`, `Backprop: train #2`, etc.)
+- **Quick run** (`Ctrl+Alt+R`): One-click launch from any Python file
+- **Configured run** (`Ctrl+Alt+Shift+R`): Set experiment name, timeout, and framework before launching
+- Play and gear buttons appear in the editor title bar for Python files
 
-### Experiment Tree View
+### Experiment Sidebar
 
-Browse all your training experiments in the Backprop sidebar. Each run is expandable to show full details:
+Browse all your training experiments in the Backprop activity bar. Each run is expandable to show full details:
 
-- **Status icons**: green check (completed), red error (failed), spinning sync (running), clock (timeboxed)
-- **Expand any run** to see: ID, script, duration, steps, loss, checkpoint count, timestamps
-- **Auto-refreshes** when experiments.json changes on disk — no manual refresh needed
-- **Right-click context menus** with actions based on run status
+- **Status icons** — spinning sync (running), green check (completed), red error (failed), clock (timeboxed)
+- **Expand any run** to see: ID, script path, duration, steps completed, current loss, checkpoint count, start/end timestamps
+- **Auto-refreshes** when `experiments.json` changes on disk — no manual refresh needed
+- **Context menus** with actions based on run status (stop, resume, show terminal)
 
 ### Run Management
 
-- **Stop**: Right-click a running experiment and select "Stop Run" — sends SIGINT for graceful shutdown
-- **Resume**: Right-click a completed/failed/timeboxed experiment and select "Resume Run" — prompts for new timeout
-- **Show Terminal**: Jump to a running experiment's terminal output
+- **Stop** (`Ctrl+Alt+S`): Send SIGINT for graceful shutdown — the script can save a final checkpoint before exiting
+- **Resume**: Pick up any completed, failed, or timeboxed experiment from its last checkpoint
+- **Show Terminal**: Jump to a running experiment's live output
 
-Inline action buttons appear directly on tree items:
-- Running experiments show stop and terminal buttons
-- Stopped experiments show a resume button
+Inline action buttons appear directly on tree items — stop/terminal for running experiments, resume for stopped ones.
 
 ### GPU Status Bar
 
-A persistent status bar item shows current GPU VRAM and temperature, refreshing every 30 seconds. Click it to launch a configured run.
+A persistent status bar item shows real-time GPU VRAM and temperature, refreshing every 10 seconds. Reads `nvidia-smi` directly — no CLI dependency required. Click it to launch a configured run.
 
 ## Keyboard Shortcuts
 
@@ -47,13 +59,14 @@ All keybindings can be customized in VS Code's Keyboard Shortcuts editor (`Ctrl+
 
 ## Requirements
 
-- **Backprop CLI** must be installed globally:
+- **Backprop CLI** installed globally:
   ```
   npm install -g @mcptoolshop/backprop
   ```
 - Python 3.x for training scripts
+- NVIDIA GPU + drivers for GPU monitoring (optional — extension works without it)
 
-The extension checks for the CLI on activation and offers to install it if missing.
+The extension checks for the CLI on activation and offers a one-click install if missing.
 
 ## Commands
 
@@ -66,17 +79,23 @@ The extension checks for the CLI on activation and offers to install it if missi
 | `Show Terminal` | Focus a running experiment's terminal | Tree view context menu + inline |
 | `Refresh Experiments` | Manually reload the experiment list | Tree view title bar |
 
-## Extension Settings
+## How It Works
 
-This extension does not add any VS Code settings. All training configuration is handled through the Backprop CLI config file (`.backprop.json`). Run `backprop init` in your project to generate one.
+The extension is a thin UI layer over the [Backprop CLI](https://www.npmjs.com/package/@mcptoolshop/backprop). It reads experiment data from `~/.backprop/experiments.json` (the same file the CLI writes to), launches CLI commands in VS Code terminals, and watches the file for changes. No background processes, no network calls — just file reads and terminal commands.
 
 ## Troubleshooting
 
 **"Backprop CLI is not installed"**
-The extension requires the CLI to be installed globally. Run `npm install -g @mcptoolshop/backprop` and reload the window.
+Run `npm install -g @mcptoolshop/backprop` and reload the window, or click "Install Now" when prompted.
 
 **No experiments in the sidebar**
-Experiments are read from `~/.backprop/experiments.json`. This file is created after your first `backprop run`. If you've run experiments from a different machine or user, the file may be in a different location.
+Experiments appear after your first `backprop run`. The data lives in `~/.backprop/experiments.json`.
 
 **GPU status shows "N/A"**
-The GPU status bar relies on `backprop status`, which uses `nvidia-smi`. Ensure NVIDIA drivers are installed and `nvidia-smi` is on your PATH.
+The GPU status bar calls `nvidia-smi` directly. Ensure NVIDIA drivers are installed and `nvidia-smi` is on your PATH.
+
+---
+
+<p align="center">
+  MIT License &middot; <a href="https://github.com/mcp-tool-shop-org">MCP Tool Shop</a>
+</p>

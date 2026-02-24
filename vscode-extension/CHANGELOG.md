@@ -2,6 +2,20 @@
 
 All notable changes to the Backprop VS Code extension will be documented in this file.
 
+## [0.3.0] - 2026-02-23
+
+### Added
+- All 6 commands fully implemented: run, configure & run, resume, stop, show terminal, refresh
+- Shell injection prevention via `safeQuote()` for all terminal commands
+- GPU status bar now calls `nvidia-smi` directly (no CLI dependency) with 10-second refresh
+- Cross-platform file watcher using `vscode.workspace.createFileSystemWatcher`
+- Beefed-up README with logo, landing page link, and "How It Works" section
+- Keyboard shortcuts: Run (`Ctrl+Alt+R`), Configure & Run (`Ctrl+Alt+Shift+R`), Stop (`Ctrl+Alt+S`)
+
+### Fixed
+- Extension was a 41-line stub with only 1 of 6 commands wired up — now fully implemented
+- Proper `vscode.Disposable` implementation on `ExperimentTreeProvider` (no unsafe cast)
+
 ## [0.2.2] - 2026-02-23
 
 ### Added
