@@ -3,7 +3,14 @@
 </p>
 
 <p align="center">
-  <img src="./logo.png" alt="Backprop Logo" width="250" />
+  <img src="./logo.png" alt="Backprop Logo" width="400" />
+</p>
+
+<p align="center">
+  <a href="https://github.com/mcp-tool-shop-org/backprop/actions/workflows/ci.yml"><img src="https://github.com/mcp-tool-shop-org/backprop/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT License"></a>
+  <a href="https://mcp-tool-shop-org.github.io/backprop/"><img src="https://img.shields.io/badge/Landing_Page-live-blue" alt="Landing Page"></a>
+  <a href="https://www.npmjs.com/package/@mcptoolshop/backprop"><img src="https://img.shields.io/npm/v/%40mcptoolshop%2Fbackprop" alt="npm version"></a>
 </p>
 
 <p align="center">
@@ -36,7 +43,7 @@ That's it. Backprop will automatically:
 Backprop includes an intelligent Governor that monitors your system resources before and during a run. It checks CPU load, available RAM, and GPU VRAM/Temperature (via `nvidia-smi`). If your system is under heavy load or running too hot, the Governor will prevent the run from starting or pause it until resources free up.
 
 ### Short Runs + Auto-Resume
-Instead of running a script for 48 hours straight and praying it doesn't crash, Backprop encourages **timeboxed runs**. By default, runs are limited to 10 minutes. 
+Instead of running a script for 48 hours straight and praying it doesn't crash, Backprop encourages **timeboxed runs**. By default, runs are limited to 10 minutes.
 
 If your script outputs checkpoint paths (e.g., `{"event": "checkpoint_saved", "path": "/tmp/ckpt.pt"}`), Backprop remembers them. You can easily resume an interrupted or timeboxed run:
 
