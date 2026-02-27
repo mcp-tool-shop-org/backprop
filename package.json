@@ -1,6 +1,6 @@
 {
   "name": "@mcptoolshop/backprop",
-  "version": "0.3.4",
+  "version": "1.0.0",
   "description": "CLI-first ML trainer with intelligent resource governance",
   "private": false,
   "type": "module",
@@ -25,10 +25,13 @@
   "scripts": {
     "build": "tsc",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "verify": "pnpm build && pnpm test && echo 'All checks passed'",
     "release": "bash scripts/release.sh"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
+    "@vitest/coverage-v8": "^1.4.0",
     "typescript": "^5.4.0",
     "vitest": "^1.4.0"
   },

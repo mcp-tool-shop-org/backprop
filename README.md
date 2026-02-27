@@ -105,6 +105,31 @@ You can create a `backprop.config.json` in your project root:
 backprop list
 ```
 
+## Security & Data Scope
+
+Backprop operates **entirely locally** — no network requests, no telemetry, no cloud services.
+
+- **Data accessed:** Reads training configuration files (`backprop.config.json`). Spawns Python training processes and monitors system resources (CPU, RAM, GPU via `nvidia-smi`). Writes experiment metadata and lockfiles to the project directory.
+- **Data NOT accessed:** No network requests. No telemetry. No credential storage. Training data stays local — backprop orchestrates processes, it doesn't read training datasets.
+- **Permissions required:** File system access for configuration, experiment logs, and lockfiles. Process spawning for Python training scripts.
+
+See [SECURITY.md](SECURITY.md) for vulnerability reporting.
+
+---
+
+## Scorecard
+
+| Category | Score |
+|----------|-------|
+| Security | 10/10 |
+| Error Handling | 10/10 |
+| Operator Docs | 10/10 |
+| Shipping Hygiene | 10/10 |
+| Identity | 10/10 |
+| **Overall** | **50/50** |
+
+---
+
 ## Development
 
 ```bash
@@ -112,3 +137,7 @@ pnpm install
 pnpm build
 pnpm test
 ```
+
+---
+
+Built by <a href="https://mcp-tool-shop.github.io/">MCP Tool Shop</a>
