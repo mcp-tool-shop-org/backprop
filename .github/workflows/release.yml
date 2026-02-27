@@ -31,7 +31,7 @@ jobs:
         run: pnpm build
 
       - name: Publish to npm
-        if: github.event_name == 'release'
+        continue-on-error: true
         run: |
           if [ -z "$NODE_AUTH_TOKEN" ]; then
             echo "::warning::NPM_TOKEN secret not set — skipping npm publish"
