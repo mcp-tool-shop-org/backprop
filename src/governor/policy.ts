@@ -10,7 +10,7 @@ export class Governor {
     private minFreeRamGB: number = 4,
     private maxTempC: number = 85,
     private minFreeVramMB: number = 2500,
-    private probeType: 'auto' | 'nvidia-smi' | 'none' = 'auto'
+    private probeType: 'auto' | 'nvidia-smi' | 'rocm' | 'none' = 'auto'
   ) {}
 
   async canStartRun(): Promise<{ allowed: boolean; reason?: string }> {

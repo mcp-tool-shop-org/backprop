@@ -16,7 +16,7 @@ export const ConfigSchema = z.object({
   checkpointEveryMinutes: z.number().positive().optional(),
   resumeFrom: safePath.optional(),
   gpu: z.object({
-    probe: z.enum(['auto', 'nvidia-smi', 'none']).default('auto'),
+    probe: z.enum(['auto', 'nvidia-smi', 'rocm', 'none']).default('auto'),
     minFreeVramMB: z.number().positive().default(2500),
     maxTempC: z.number().positive().default(85),
   }).default({}),
