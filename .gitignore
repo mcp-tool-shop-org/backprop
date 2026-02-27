@@ -2,6 +2,11 @@ node_modules/
 !vscode-extension/node_modules/
 /dist/
 *.tgz
+*.vsix
 .DS_Store
 Thumbs.db
+__pycache__/
+.polyglot-cache.json
 site/.astro/
+site/dist/
+site/node_modules/
