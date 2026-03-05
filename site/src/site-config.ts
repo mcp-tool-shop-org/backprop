@@ -15,7 +15,7 @@ export const config: SiteConfig = {
     headlineAccent: 'Not overnight.',
     description: 'CLI-first ML trainer with intelligent resource governance — timeboxed runs, GPU monitoring, and auto-resume from checkpoints.',
     primaryCta: { href: '#usage', label: 'Get started' },
-    secondaryCta: { href: '#features', label: 'See features' },
+    secondaryCta: { href: 'handbook/', label: 'Read the Handbook' },
     previews: [
       { label: 'Install', code: 'npm install -g @mcptoolshop/backprop' },
       { label: 'Run', code: 'backprop run train.py --name my-first-run' },
