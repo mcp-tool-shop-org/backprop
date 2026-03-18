@@ -1,3 +1,5 @@
+# Pin to node:22-slim for reproducibility
+# Update periodically: docker pull node:22-slim && docker inspect --format='{{index .RepoDigests 0}}' node:22-slim
 FROM node:22-slim
 
 # Install Python and build tools

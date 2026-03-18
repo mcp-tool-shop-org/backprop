@@ -42,6 +42,29 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Dependency audit
+        run: pnpm audit --audit-level=high
+
+      - name: Secret scan
+        run: |
+          cat > /tmp/secret-patterns.txt <<PATTERNS
+          PRIVATE.KEY
+          sk_live_
+          sk_test_
+          aws_secret
+          PATTERNS
+          FOUND=0
+          while IFS= read -r pattern; do
+            pattern=$(echo "$pattern" | xargs)
+            [ -z "$pattern" ] && continue
+            if git grep -lI "$pattern" -- ':!*.md' ':!.github/workflows/*' ':!node_modules' 2>/dev/null; then
+              echo "FAIL: potential secret pattern '$pattern' found"
+              FOUND=1
+            fi
+          done < /tmp/secret-patterns.txt
+          if [ "$FOUND" -eq 1 ]; then exit 1; fi
+          echo "No hardcoded secrets detected"
+
       - name: Run tests
         run: pnpm test
 
