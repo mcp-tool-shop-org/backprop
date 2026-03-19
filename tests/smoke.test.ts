@@ -36,33 +36,41 @@ describe('Smoke Test', () => {
   it('should resume a run', async () => {
     const dummyScript = path.join(__dirname, 'dummy.py');
     const runId = 'test-resume-run';
-    
-    const store = new ExperimentStore();
-    await store.init();
-    
-    // Create a fake checkpoint
-    await store.saveRun({
-      id: runId,
-      scriptPath: dummyScript,
-      status: 'completed',
-      startTime: Date.now(),
-      checkpoints: ['/fake/checkpoint/path']
-    });
 
-    const config = ConfigSchema.parse({
-      trainingScriptPath: dummyScript,
-      maxRunMinutes: 0.01,
-      runId: runId
-    });
-    
-    const bucket = new TokenBucket(4, 1, 60000);
-    const monitor = new ResourceMonitor();
-    const governor = new Governor(bucket, monitor, 2, 0, 85, 0);
-    
-    const runner = new PythonRunner(config, governor, store);
-    const result = await runner.run();
-    
-    expect(result.success).toBe(true);
-    expect(config.resumeFrom).toBe('/fake/checkpoint/path');
+    // Create a real temp file to act as checkpoint
+    const tmpCheckpoint = path.join(os.tmpdir(), 'backprop-test-ckpt-' + Date.now());
+    await fs.writeFile(tmpCheckpoint, 'fake checkpoint data');
+
+    try {
+      const store = new ExperimentStore();
+      await store.init();
+
+      // Create a checkpoint pointing to the real temp file
+      await store.saveRun({
+        id: runId,
+        scriptPath: dummyScript,
+        status: 'completed',
+        startTime: Date.now(),
+        checkpoints: [tmpCheckpoint]
+      });
+
+      const config = ConfigSchema.parse({
+        trainingScriptPath: dummyScript,
+        maxRunMinutes: 0.01,
+        runId: runId
+      });
+
+      const bucket = new TokenBucket(4, 1, 60000);
+      const monitor = new ResourceMonitor();
+      const governor = new Governor(bucket, monitor, 2, 0, 85, 0);
+
+      const runner = new PythonRunner(config, governor, store);
+      const result = await runner.run();
+
+      expect(result.success).toBe(true);
+      expect(config.resumeFrom).toBe(tmpCheckpoint);
+    } finally {
+      await fs.unlink(tmpCheckpoint).catch(() => {});
+    }
   });
 });

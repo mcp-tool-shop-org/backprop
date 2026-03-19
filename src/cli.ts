@@ -1,4 +1,7 @@
 import { Command } from 'commander';
+import { fileURLToPath } from 'url';
+import * as path from 'path';
+import { readFileSync } from 'fs';
 import { loadConfig } from './config/index.js';
 import { Config } from './config/schema.js';
 import { PythonRunner } from './runner/python-runner.js';
@@ -7,13 +10,17 @@ import { TokenBucket } from './governor/token-bucket.js';
 import { Governor } from './governor/policy.js';
 import { ExperimentStore } from './experiments/store.js';
 import { getGpuProbe } from './governor/probes/index.js';
+import { formatDuration } from './utils/format.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const pkg = JSON.parse(readFileSync(path.join(__dirname, '..', 'package.json'), 'utf-8'));
 
 export const program = new Command();
 
 program
   .name('backprop')
   .description('CLI-first ML trainer with intelligent resource governance')
-  .version('0.1.0')
+  .version(pkg.version)
   .option('--config <path>', 'Path to config file')
   .option('--verbose', 'Enable verbose logging')
   .option('--dry-run', 'Simulate run without executing')
@@ -212,7 +219,12 @@ program
     for (const run of runs) {
       const name = run.name ? `"${run.name}"` : 'unnamed';
       const date = new Date(run.startTime).toLocaleString();
-      console.log(`- [${run.id}] ${name} | Status: ${run.status} | Started: ${date}`);
+      const duration = formatDuration(run.startTime, run.endTime);
+      const ckptCount = run.checkpoints?.length ?? 0;
+      const progress = run.lastStep !== undefined ? ` | Step: ${run.lastStep}` : '';
+      const loss = run.lastLoss !== undefined ? ` | Loss: ${run.lastLoss.toFixed(4)}` : '';
+      const ckpts = ckptCount > 0 ? ` | Checkpoints: ${ckptCount}` : '';
+      console.log(`- [${run.id}] ${name} | ${run.status} | ${duration}${progress}${loss}${ckpts} | ${date}`);
     }
   });
 
@@ -256,8 +268,6 @@ program
       console.log('Warning: Advanced resource monitoring failed. Running in conservative mode.');
     }
   });
-
-import { fileURLToPath } from 'url';
 
 const isMain = process.argv[1] === fileURLToPath(import.meta.url);
 if (isMain) {

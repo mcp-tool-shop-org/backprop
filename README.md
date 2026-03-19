@@ -51,6 +51,20 @@ If your script outputs checkpoint paths (e.g., `{"event": "checkpoint_saved", "p
 backprop resume <run-id>
 ```
 
+When resuming, Backprop verifies the checkpoint file still exists on disk. If it's been deleted or moved, it warns you and starts fresh instead of passing a stale path to your script.
+
+### Training Metrics
+Backprop tracks your training progress in real time. When your script emits JSON progress lines (e.g., `{"step": 500, "loss": 0.015}`), Backprop records the latest step and loss. View them with:
+
+```bash
+backprop list
+```
+
+Output shows duration, progress, and checkpoint count at a glance:
+```
+- [run-123] "my-experiment" | completed | 8m 30s | Step: 500 | Loss: 0.0150 | Checkpoints: 3 | 3/19/2026
+```
+
 ### Resource Monitoring
 Backprop uses `nvidia-smi` to accurately monitor NVIDIA GPUs. It automatically selects the GPU with the most free VRAM and ensures it meets your minimum requirements before starting a run.
 
@@ -109,9 +123,9 @@ backprop list
 
 Backprop operates **entirely locally** — no network requests, no telemetry, no cloud services.
 
-- **Data accessed:** Reads training configuration files (`backprop.config.json`). Spawns Python training processes and monitors system resources (CPU, RAM, GPU via `nvidia-smi`). Writes experiment metadata and lockfiles to the project directory.
+- **Data accessed:** Reads training configuration files (`backprop.config.json`). Spawns Python training processes and monitors system resources (CPU, RAM, GPU via `nvidia-smi`). Writes experiment metadata to `~/.backprop/experiments.json` using atomic file writes.
 - **Data NOT accessed:** No network requests. No telemetry. No credential storage. Training data stays local — backprop orchestrates processes, it doesn't read training datasets.
-- **Permissions required:** File system access for configuration, experiment logs, and lockfiles. Process spawning for Python training scripts.
+- **Permissions required:** File system access for configuration and experiment logs. Process spawning for Python training scripts.
 
 See [SECURITY.md](SECURITY.md) for vulnerability reporting.
 

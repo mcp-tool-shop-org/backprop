@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2026-03-19
+
+### Added
+- **Training metrics tracking**: `lastStep` and `lastLoss` are now saved on every progress update and displayed in `backprop list`.
+- **Enhanced list command**: Shows run duration, training step, loss, and checkpoint count alongside status.
+- **Checkpoint existence validation**: Auto-resume now verifies checkpoint files exist on disk before passing them to the training script; falls back to fresh start if stale.
+- **Corrupted DB backup**: If `experiments.json` is corrupted, a timestamped `.corrupt` backup is created before starting fresh.
+- **stderr buffer limit**: Python process stderr is capped at 10 MB to prevent memory exhaustion from verbose error output.
+
+### Fixed
+- **CLI version mismatch**: `backprop --version` now reads from `package.json` dynamically instead of a stale hardcoded string.
+- **Atomic persistence**: Replaced fragile exclusive lockfile with atomic temp-file-then-rename writes, eliminating stale lock and retry-race issues.
+- **Checkpoint path traversal**: Checkpoint paths emitted by Python scripts are now validated; paths containing `..` are rejected.
+
+### Removed
+- **Committed VS Code extension artifacts**: Removed `node_modules/` and `dist/` from git tracking; updated `.gitignore`.
+
 ## [1.0.0] - 2026-02-27
 
 ### Changed

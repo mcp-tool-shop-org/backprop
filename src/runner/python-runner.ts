@@ -14,12 +14,15 @@ export interface RunResult {
   reason?: string;
 }
 
+const MAX_STDERR_BYTES = 10 * 1024 * 1024; // 10 MB
+
 export class PythonRunner {
   private process: ChildProcess | null = null;
   private startTime: number = 0;
   private abortController: AbortController;
   private runRecord!: RunRecord;
   private spinner: Ora;
+  private stderrBytes: number = 0;
 
   constructor(
     private config: Config, 
@@ -72,8 +75,13 @@ export class PythonRunner {
     if (!this.config.resumeFrom) {
       const latestCheckpoint = await this.store.getLatestCheckpoint(this.config.runId);
       if (latestCheckpoint) {
-        this.config.resumeFrom = latestCheckpoint;
-        this.spinner.info(`Auto-resuming from checkpoint: ${latestCheckpoint}`);
+        try {
+          await access(latestCheckpoint, constants.R_OK);
+          this.config.resumeFrom = latestCheckpoint;
+          this.spinner.info(`Auto-resuming from checkpoint: ${latestCheckpoint}`);
+        } catch {
+          this.spinner.warn(`Checkpoint not found on disk, starting fresh: ${latestCheckpoint}`);
+        }
       }
     }
     
@@ -118,8 +126,14 @@ export class PythonRunner {
 
       if (this.process.stderr) {
         this.process.stderr.on('data', (data) => {
-          errorOutput += data.toString();
-          this.spinner.warn(`[Python Error] ${data.toString().trim()}`);
+          const chunk = data.toString();
+          this.stderrBytes += Buffer.byteLength(chunk);
+          if (this.stderrBytes <= MAX_STDERR_BYTES) {
+            errorOutput += chunk;
+            this.spinner.warn(`[Python Error] ${chunk.trim()}`);
+          } else if (this.stderrBytes - Buffer.byteLength(chunk) <= MAX_STDERR_BYTES) {
+            this.spinner.warn(`[Python Error] stderr truncated at ${MAX_STDERR_BYTES / (1024 * 1024)}MB`);
+          }
         });
       }
 
@@ -202,7 +216,15 @@ export class PythonRunner {
   private async handleProgress(data: any) {
     if (data.step !== undefined && data.loss !== undefined) {
       this.spinner.text = `Training... Step: ${data.step} | Loss: ${data.loss.toFixed(4)}`;
-    } else if (data.event === 'checkpoint_saved') {
+      this.runRecord.lastStep = data.step;
+      this.runRecord.lastLoss = data.loss;
+      await this.store.saveRun(this.runRecord);
+    } else if (data.event === 'checkpoint_saved' && typeof data.path === 'string') {
+      if (data.path.includes('..')) {
+        this.spinner.warn(`Ignoring checkpoint with path traversal: ${data.path}`);
+        this.spinner.start();
+        return;
+      }
       this.spinner.info(`Checkpoint saved at ${data.path}`);
       this.spinner.start(); // Resume spinner after info
       if (!this.runRecord.checkpoints) {
