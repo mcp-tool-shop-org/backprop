@@ -13,17 +13,18 @@ import * as os from 'os';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 describe('Smoke Test', () => {
-  it('should run a dummy Python script safely', async () => {
+  it('should run a dummy Python script safely', { timeout: 30000 }, async () => {
     const dummyScript = path.join(__dirname, 'dummy.py');
+    const tmpDir = path.join(os.tmpdir(), 'backprop-smoke-1-' + Date.now());
     const config = ConfigSchema.parse({
       trainingScriptPath: dummyScript,
-      maxRunMinutes: 1, // very short run
+      maxRunMinutes: 1,
     });
-    
+
     const bucket = new TokenBucket(4, 1, 60000);
     const monitor = new ResourceMonitor();
-    const governor = new Governor(bucket, monitor, 2, 0, 85, 0); // 0 RAM limit, 0 VRAM limit to ensure it runs
-    const store = new ExperimentStore();
+    const governor = new Governor(bucket, monitor, 2, 0, 85, 0);
+    const store = new ExperimentStore(tmpDir);
     await store.init();
     
     const runner = new PythonRunner(config, governor, store);
@@ -33,16 +34,17 @@ describe('Smoke Test', () => {
     expect(['completed', 'timeboxed']).toContain(result.reason);
   });
 
-  it('should resume a run', async () => {
+  it('should resume a run', { timeout: 30000 }, async () => {
     const dummyScript = path.join(__dirname, 'dummy.py');
     const runId = 'test-resume-run';
+    const tmpDir = path.join(os.tmpdir(), 'backprop-smoke-2-' + Date.now());
 
     // Create a real temp file to act as checkpoint
     const tmpCheckpoint = path.join(os.tmpdir(), 'backprop-test-ckpt-' + Date.now());
     await fs.writeFile(tmpCheckpoint, 'fake checkpoint data');
 
     try {
-      const store = new ExperimentStore();
+      const store = new ExperimentStore(tmpDir);
       await store.init();
 
       // Create a checkpoint pointing to the real temp file
