@@ -188,7 +188,7 @@ describe('PythonRunner enhancements', () => {
   });
 
   describe('stderr buffer limit', () => {
-    it('truncates stderr beyond 10MB', async () => {
+    it('stops accumulating stderr after limit is reached', async () => {
       const config = ConfigSchema.parse({ trainingScriptPath: 'train.py' });
       const runner = new PythonRunner(config, governor, mockStore);
 
@@ -200,10 +200,12 @@ describe('PythonRunner enhancements', () => {
         mockProcess.kill = vi.fn();
         mockProcess.exitCode = null;
 
-        const bigChunk = 'x'.repeat(1024 * 1024); // 1MB
+        // Write chunks that exceed the 10MB limit using smaller increments
+        const chunk = 'x'.repeat(100 * 1024); // 100KB
         setTimeout(() => {
-          for (let i = 0; i < 12; i++) {
-            mockProcess.stderr.write(bigChunk);
+          // 110 * 100KB = 11MB > 10MB limit
+          for (let i = 0; i < 110; i++) {
+            mockProcess.stderr.write(chunk);
           }
         }, 20);
         setTimeout(() => {
@@ -219,7 +221,8 @@ describe('PythonRunner enhancements', () => {
       const result = await runPromise;
 
       expect(result.error).toBeDefined();
-      expect(Buffer.byteLength(result.error!)).toBeLessThanOrEqual(11 * 1024 * 1024);
+      // Should be truncated — accumulated data stops at ~10MB, not full 11MB
+      expect(Buffer.byteLength(result.error!)).toBeLessThanOrEqual(10.2 * 1024 * 1024);
     });
   });
 

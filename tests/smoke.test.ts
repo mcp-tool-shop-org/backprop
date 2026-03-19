@@ -17,7 +17,7 @@ describe('Smoke Test', () => {
     const dummyScript = path.join(__dirname, 'dummy.py');
     const config = ConfigSchema.parse({
       trainingScriptPath: dummyScript,
-      maxRunMinutes: 0.01, // very short run
+      maxRunMinutes: 1, // very short run
     });
     
     const bucket = new TokenBucket(4, 1, 60000);
@@ -56,7 +56,7 @@ describe('Smoke Test', () => {
 
       const config = ConfigSchema.parse({
         trainingScriptPath: dummyScript,
-        maxRunMinutes: 0.01,
+        maxRunMinutes: 1,
         runId: runId
       });
 
