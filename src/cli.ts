@@ -1,7 +1,5 @@
 import { Command } from 'commander';
 import { fileURLToPath } from 'url';
-import * as path from 'path';
-import { readFileSync } from 'fs';
 import { loadConfig } from './config/index.js';
 import { Config } from './config/schema.js';
 import { PythonRunner } from './runner/python-runner.js';
@@ -11,16 +9,14 @@ import { Governor } from './governor/policy.js';
 import { ExperimentStore } from './experiments/store.js';
 import { getGpuProbe } from './governor/probes/index.js';
 import { formatDuration } from './utils/format.js';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const pkg = JSON.parse(readFileSync(path.join(__dirname, '..', 'package.json'), 'utf-8'));
+import { VERSION } from './version.js';
 
 export const program = new Command();
 
 program
   .name('backprop')
   .description('CLI-first ML trainer with intelligent resource governance')
-  .version(pkg.version)
+  .version(VERSION)
   .option('--config <path>', 'Path to config file')
   .option('--verbose', 'Enable verbose logging')
   .option('--dry-run', 'Simulate run without executing')
