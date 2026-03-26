@@ -3,6 +3,18 @@ title: Reference
 description: Full CLI reference, configuration file, governor behavior, and security model for Backprop.
 ---
 
+## Global options
+
+These options apply to all commands:
+
+| Flag | Description |
+|------|-------------|
+| `--config <path>` | Path to a custom config file |
+| `--verbose` | Print resolved configuration before running |
+| `--dry-run` | Simulate the run without executing |
+| `--version` | Print the installed version and exit |
+| `--help` | Show help for any command |
+
 ## CLI commands
 
 ### run
@@ -23,9 +35,9 @@ backprop run <script> [options]
 | `-g, --gpu-memory-limit` | — | GPU memory limit (e.g. `"80%"` or `"8"` for GB) |
 | `--gpu-min-vram` | `2500` | Minimum free VRAM in MB to start run |
 | `--gpu-max-temp` | `85` | Maximum GPU temperature in Celsius |
-| `-p, --max-parallel` | `1` | Maximum number of parallel runs |
+| `-p, --max-parallel` | `2` | Maximum number of parallel runs |
 | `--min-free-ram` | `4` | Minimum free RAM in GB to start run |
-| `--gpu-probe` | `auto` | GPU probe type: `auto`, `nvidia-smi`, or `none` |
+| `--gpu-probe` | `auto` | GPU probe type: `auto`, `nvidia-smi`, `rocm`, or `none` |
 | `--run-id` | — | Unique identifier for this run |
 
 ### resume
@@ -60,7 +72,7 @@ Shows run IDs, names, status, duration, and checkpoint information for all recor
 
 ## Configuration file
 
-Create a `backprop.config.json` in your project root to set defaults:
+Create a `backprop.config.json` (or `.backprop.json`) in your project root to set defaults:
 
 ```json
 {
@@ -80,9 +92,9 @@ Create a `backprop.config.json` in your project root to set defaults:
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
 | `maxRunMinutes` | number | `10` | Default maximum run time in minutes |
-| `maxParallel` | number | `1` | Maximum number of parallel runs allowed |
+| `maxParallel` | number | `2` | Maximum number of parallel runs allowed |
 | `gpuMemoryLimit` | string | — | GPU memory cap as percentage (`"80%"`) or absolute GB (`"8"`) |
-| `gpu.probe` | string | `"auto"` | GPU detection method: `"auto"`, `"nvidia-smi"`, or `"none"` |
+| `gpu.probe` | string | `"auto"` | GPU detection method: `"auto"`, `"nvidia-smi"`, `"rocm"`, or `"none"` |
 | `gpu.minFreeVramMB` | number | `2500` | Minimum free VRAM in MB required before starting a run |
 | `gpu.maxTempC` | number | `85` | Maximum allowed GPU temperature in Celsius |
 
@@ -98,11 +110,15 @@ Before every run, the Governor verifies:
 
 1. **CPU load** — If the system is under heavy load, the run is delayed or rejected
 2. **Available RAM** — Must meet `--min-free-ram` threshold (default: 4GB)
-3. **GPU availability** — Runs `nvidia-smi` to enumerate GPUs and their VRAM/temperature
+3. **GPU availability** — Runs `nvidia-smi` (NVIDIA) or `rocm-smi` (AMD) to enumerate GPUs and their VRAM/temperature
 4. **GPU VRAM** — Selected GPU must have at least `--gpu-min-vram` MB free (default: 2500)
 5. **GPU temperature** — Selected GPU must be below `--gpu-max-temp` Celsius (default: 85)
 
 If any check fails, the run does not start and a clear error message explains what is insufficient.
+
+### Rate limiting
+
+The Governor uses a token bucket to prevent rapid-fire run starts. It holds 4 tokens and refills 1 token per minute. Each run consumes 1 token. If you try to start runs faster than the bucket refills, the Governor rejects the request until tokens are available.
 
 ### Runtime monitoring
 
@@ -111,11 +127,15 @@ During a run, the Governor continues to monitor:
 - **GPU temperature** — If temperature exceeds the maximum, the run is paused automatically
 - **Timebox** — When the time limit is reached, Backprop sends a graceful shutdown signal
 
+### Conservative mode
+
+If system resource monitoring fails (e.g., OS APIs return errors), the Governor enters conservative mode. In this mode, only single-run execution is allowed (`maxParallel` must be 1). This prevents accidental resource exhaustion when the Governor cannot verify system state.
+
 ### GPU selection
 
 On systems with multiple NVIDIA GPUs, the Governor automatically selects the GPU with the most free VRAM. This happens transparently — no manual GPU ID configuration is needed.
 
-If `nvidia-smi` is not available (e.g., on CPU-only machines), set `--gpu-probe none` to disable GPU checks entirely.
+If neither `nvidia-smi` nor `rocm-smi` is available (e.g., on CPU-only machines), set `--gpu-probe none` to disable GPU checks entirely.
 
 ## Checkpoint protocol
 

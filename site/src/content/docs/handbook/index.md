@@ -8,7 +8,9 @@ Welcome to the **Backprop** handbook. This guide covers everything you need to r
 ## Contents
 
 - [Getting Started](./getting-started/) — Installation, your first training run, and resource monitoring
+- [Configuration](./configuration/) — Config files, GPU settings, and parallelism
 - [Reference](./reference/) — CLI commands, configuration file, governor behavior, and security model
+- [For Beginners](./beginners/) — New to ML training? Start here
 
 ## What is Backprop?
 
@@ -19,7 +21,7 @@ Backprop is a CLI-first ML trainer that defaults to short, safe 10-minute runs w
 - **Short by default** — 10-minute timebox prevents runaway jobs and overnight surprises
 - **Resource-aware** — The Governor checks CPU, RAM, GPU VRAM, and temperature before and during every run
 - **Resumable** — Checkpoint paths are tracked automatically. Resume any interrupted run with a single command
-- **GPU-intelligent** — Uses `nvidia-smi` to select the GPU with the most free VRAM and monitors temperature throughout
+- **GPU-intelligent** — Uses `nvidia-smi` (NVIDIA) or `rocm-smi` (AMD) to select the GPU with the most free VRAM and monitors temperature throughout
 
 ### How it works
 

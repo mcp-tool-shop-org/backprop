@@ -66,7 +66,7 @@ Output shows duration, progress, and checkpoint count at a glance:
 ```
 
 ### Resource Monitoring
-Backprop uses `nvidia-smi` to accurately monitor NVIDIA GPUs. It automatically selects the GPU with the most free VRAM and ensures it meets your minimum requirements before starting a run.
+Backprop uses `nvidia-smi` (NVIDIA) or `rocm-smi` (AMD) to monitor GPUs. It automatically selects the GPU with the most free VRAM and ensures it meets your minimum requirements before starting a run.
 
 You can check your system's current resource status at any time:
 
@@ -92,13 +92,13 @@ Options:
 - `-g, --gpu-memory-limit <limit>`: GPU memory limit (e.g., "80%" or "8" for GB)
 - `-p, --max-parallel <count>`: Maximum parallel runs
 - `--min-free-ram <gb>`: Minimum free RAM in GB to start run (default: 4)
-- `--gpu-probe <type>`: GPU probe type (auto | nvidia-smi | none)
+- `--gpu-probe <type>`: GPU probe type (auto | nvidia-smi | rocm | none)
 - `--gpu-min-vram <mb>`: Minimum free VRAM in MB to start run (default: 2500)
 - `--gpu-max-temp <c>`: Maximum GPU temperature in Celsius (default: 85)
 
 ### Configuration File
 
-You can create a `backprop.config.json` in your project root:
+You can create a `backprop.config.json` (or `.backprop.json`) in your project root:
 
 ```json
 {
@@ -112,6 +112,16 @@ You can create a `backprop.config.json` in your project root:
   }
 }
 ```
+
+### Global Options
+
+These apply to any command:
+
+- `--config <path>`: Path to a custom config file
+- `--verbose`: Enable verbose logging (prints resolved config)
+- `--dry-run`: Simulate run without executing
+- `--version`: Print the installed version
+- `--help`: Show help for any command
 
 ### List experiments
 

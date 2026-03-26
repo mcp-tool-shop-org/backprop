@@ -68,7 +68,7 @@ The Governor monitors your system **before and during** every run:
 
 ### GPU selection
 
-Backprop automatically selects the GPU with the most free VRAM using `nvidia-smi`. On multi-GPU systems, it picks the best available GPU without manual configuration.
+Backprop automatically selects the GPU with the most free VRAM using `nvidia-smi` (NVIDIA) or `rocm-smi` (AMD). On multi-GPU systems, it picks the best available GPU without manual configuration. If neither tool is available, set `--gpu-probe none` to skip GPU checks.
 
 ## Resuming runs
 
